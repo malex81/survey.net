@@ -29,21 +29,37 @@ internal class InvestigateDevice : ISurveyArea
 
 	public void Survey()
 	{
+		SurveyAll();
+		//SurveyDefault();
+	}
+
+	void SurveyAll()
+	{
 		//using Context context = Context.Create(builder => builder.AllAccelerators().EnableAlgorithms());
 		using Context context = Context.Create(builder => builder.AllAccelerators());
 		//using Context context = Context.CreateDefault();
 
 		foreach (Device device in context)
-		{
-			using Accelerator accelerator = device.CreateAccelerator(context);
-			StringWriter accInfo = new();
-			accelerator.PrintInformation(accInfo);
-			logger.LogInformation("Device:\t{device}"
-				+ "\nAccelerator:\t{accelerator}",
-				device, accInfo.ToString());
-			ExecuteKernel(accelerator);
-			Thread.Sleep(100);
-		}
+			ExploreDevice(context, device);
+	}
+
+	void SurveyDefault()
+	{
+		using Context context = Context.Create(builder => builder.Default().EnableAlgorithms());
+		var device = context.GetPreferredDevice(preferCPU: false);
+		ExploreDevice(context, device);
+	}
+
+	void ExploreDevice(Context context, Device device)
+	{
+		using Accelerator accelerator = device.CreateAccelerator(context);
+		StringWriter accInfo = new();
+		accelerator.PrintInformation(accInfo);
+		logger.LogInformation("Device:\t{device}"
+			+ "\nAccelerator:\t{accelerator}",
+			device, accInfo.ToString());
+		ExecuteKernel(accelerator);
+		Thread.Sleep(100);
 	}
 
 	const int INPUT_SIZE = 1000000,
