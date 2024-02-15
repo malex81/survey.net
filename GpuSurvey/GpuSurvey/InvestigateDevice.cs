@@ -14,6 +14,7 @@ namespace GpuSurvey;
 /*
  * https://ilgpu.net/docs/ - general docs
  * https://ilgpu.net/docs/02-beginner/01-context-and-accelerators/ - samples about devices
+ * https://ilgpu.net/docs/02-beginner/04-structs/ - examples with GetPreferredDevice
  */
 internal class InvestigateDevice : ISurveyArea
 {
@@ -29,7 +30,8 @@ internal class InvestigateDevice : ISurveyArea
 	public void Survey()
 	{
 		//using Context context = Context.Create(builder => builder.AllAccelerators().EnableAlgorithms());
-		using Context context = Context.CreateDefault();
+		using Context context = Context.Create(builder => builder.AllAccelerators());
+		//using Context context = Context.CreateDefault();
 
 		foreach (Device device in context)
 		{
@@ -86,7 +88,7 @@ internal class InvestigateDevice : ISurveyArea
 
 	static void Kernel(Index1D i, ArrayView<float> data, ArrayView<float> output)
 	{
-		// output[i] = (float)Math.Sin(data[i % data.Length]);
+		//output[i] = (float)Math.Sin(data[i % data.Length]);
 		output[i] = XMath.Sin(data[i % data.Length]);
 		// output[i] = data[i % data.Length] * data.Length;
 	}
