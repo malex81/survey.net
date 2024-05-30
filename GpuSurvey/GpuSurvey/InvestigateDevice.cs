@@ -99,7 +99,7 @@ internal class InvestigateDevice : ISurveyArea
 
 		Console.WriteLine($"Output: {string.Join("; ", hostOutput.Take(100))}");
 
-		logger.LogInformation("Timings:\t{timeLog}", timeLog);
+		logger.LogInformation("--- Timings ---\r\n{timeLog}", timeLog);
 	}
 
 	static void Kernel(Index1D i, ArrayView<float> data, ArrayView<float> output)
