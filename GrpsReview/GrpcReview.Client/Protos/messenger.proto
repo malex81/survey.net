@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option csharp_namespace = "GrpsReview.Client";
+
+package review;
+ 
+message Request{}
+ 
+message Response{
+    string content = 1;
+}
+
+service Messenger{
+    // серверная потоковая передача
+    rpc ServerDataStream (Request) returns (stream Response);
+}
