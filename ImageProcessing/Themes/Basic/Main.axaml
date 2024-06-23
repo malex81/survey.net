@@ -1,0 +1,71 @@
+﻿<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<!-- Design-time preview -->
+	<Design.PreviewWith>
+		<Border Classes="dialog-border" Background="{DynamicResource BgMainBrush}" Padding="8">
+			<Border.Styles>
+				<Style Selector=":is(Layoutable).demo-box">
+					<Setter Property="Margin" Value="-6 -2"/>
+					<Style Selector="^>:is(Layoutable)">
+						<Setter Property="Margin" Value="2"/>
+					</Style>
+					<Style Selector="^>:is(Layoutable):nth-last-child(1)">
+						<Setter Property="Margin" Value="0 2 6 2"/>
+					</Style>
+					<Style Selector="^>:is(Layoutable):nth-child(1)">
+						<Setter Property="Margin" Value="6 2 0 2"/>
+					</Style>
+				</Style>
+			</Border.Styles>
+			<StackPanel>
+				<TextBlock Foreground="{DynamicResource TextPrimaryBrush}">Text primary</TextBlock>
+				<Panel Background="{DynamicResource BgTranslucentBrush}" Classes="demo-box">
+					<TextBlock Foreground="{DynamicResource TextPrimaryBrush}">Text primary</TextBlock>
+				</Panel>
+				<TextBlock Classes="text-warning">Text warning</TextBlock>
+				<TextBlock Classes="text-danger">Text danger</TextBlock>
+				<TextBlock Foreground="{DynamicResource TextDangerBrush}">Text danger 2</TextBlock>
+				<TextBlock Foreground="{DynamicResource TextLightBrush}">Text light</TextBlock>
+				<Panel Background="{DynamicResource BgHighlightBrush}" Classes="demo-box">
+					<TextBlock Foreground="{DynamicResource TextMainBrush}">Text main</TextBlock>
+				</Panel>
+				<TextBlock Foreground="{DynamicResource TextMutedBrush}">Text muted</TextBlock>
+			</StackPanel>
+		</Border>
+	</Design.PreviewWith>
+	<!-- Basic resources -->
+	<Styles.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceInclude Source="/Themes/Basic/ColorPalette.axaml" />
+				<ResourceInclude Source="/Themes/Basic/AvaloniaOverrides.axaml" />
+			</ResourceDictionary.MergedDictionaries>
+		</ResourceDictionary>
+		<SolidColorBrush x:Key="BlackBrush">#000</SolidColorBrush>
+		<SolidColorBrush x:Key="BgMainBrush" Color="{StaticResource BgMainColor}" />
+		<SolidColorBrush x:Key="BgSecondaryBrush" Color="{StaticResource BgSecondaryColor}" />
+		<SolidColorBrush x:Key="BgTranslucentBrush">#4fffffff</SolidColorBrush>
+		<SolidColorBrush x:Key="BgHighlightBrush">#266CA7</SolidColorBrush>
+		<SolidColorBrush x:Key="TextMainBrush">#fff</SolidColorBrush>
+		<SolidColorBrush x:Key="TextLightBrush">#d9d9d9</SolidColorBrush>
+		<SolidColorBrush x:Key="TextMutedBrush">#6a6a6a</SolidColorBrush>
+		<SolidColorBrush x:Key="TextWarningBrush">#ffa000</SolidColorBrush>
+		<SolidColorBrush x:Key="TextDangerBrush">#ff6666</SolidColorBrush>
+		<SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
+	</Styles.Resources>
+	<!-- Text colors -->
+	<Style Selector=":is(TemplatedControl).text-primary, :is(TextBlock).text-primary">
+		<Setter Property="TextBlock.Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+	</Style>
+	<Style Selector=":is(TemplatedControl).text-danger, :is(TextBlock).text-danger">
+		<Setter Property="TextBlock.Foreground" Value="{DynamicResource TextDangerBrush}" />
+	</Style>
+	<Style Selector=":is(TemplatedControl).text-warning, :is(TextBlock).text-warning">
+		<Setter Property="TextBlock.Foreground" Value="{DynamicResource TextWarningBrush}" />
+	</Style>
+	<!-- Dialogs -->
+	<Style Selector="Border.dialog-border">
+		<Setter Property="BorderBrush" Value="{DynamicResource TextPrimaryBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
+	</Style>
+</Styles>

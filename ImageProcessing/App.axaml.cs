@@ -3,18 +3,25 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using ImageProcessing.Engine;
+using ImageProcessing.MainViewModels;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.IO;
+using System.Reflection;
 
 namespace ImageProcessing;
 
 public partial class App : Application
 {
-    private EngineKernel? kernel;
+	public static EngineKernel? CurrentKernel => ((App?)Current)?.kernel;
 
-    public override void Initialize()
-    {
-        AvaloniaXamlLoader.Load(this);
-    }
+	private EngineKernel? kernel;
+
+	public override void Initialize()
+	{
+		AvaloniaXamlLoader.Load(this);
+	}
 
 	public override void OnFrameworkInitializationCompleted()
 	{
@@ -32,10 +39,19 @@ public partial class App : Application
 		kernel?.Dispose();
 	}
 
-	static Window BuildMainWindow()
+	MainWindow BuildMainWindow()
 	{
-		
+		kernel = EngineKernel.ConfigureBuilder(config =>
+		{
+			var binPath = Path.GetDirectoryName(Assembly.GetEntryAssembly()!.Location);
+			config.SetBasePath(Path.Combine(binPath!, "../config"))
+				  .AddJsonFile("appsettings.json", optional: false)
+				  .AddCommandLine(Environment.GetCommandLineArgs());
+		}).AddServices(AppServicesConfig.LoggingConfig)
+		  .AddServices(AppServicesConfig.MainModels)
+		  .AddServices(AppServicesConfig.Surveys)
+		  .Build();
 
-		return new MainWindow();
+		return new() { DataContext = kernel.Services.GetRequiredService<MainWindowModel>() };
 	}
 }

@@ -1,0 +1,12 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- SolidColorBrush overrides -->
+	<SolidColorBrush x:Key="SystemControlBackgroundChromeMediumLowBrush" Color="{StaticResource BgMainColor}" />
+	<SolidColorBrush x:Key="SystemControlTransientBackgroundBrush" Color="{StaticResource BgSecondaryColor}" />
+	<SolidColorBrush x:Key="SystemControlBackgroundAltMediumLowBrush" Color="{StaticResource BgSecondaryColor}" />
+	<!-- StaticResource overrides -->
+	<StaticResource x:Key="MenuFlyoutPresenterBackground" ResourceKey="SystemControlTransientBackgroundBrush" />
+	<StaticResource x:Key="ComboBoxBackground" ResourceKey="SystemControlBackgroundChromeMediumLowBrush" />
+	<StaticResource x:Key="ComboBoxDropDownBackground" ResourceKey="SystemControlBackgroundAltMediumLowBrush" />
+
+</ResourceDictionary>
