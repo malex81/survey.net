@@ -1,6 +1,9 @@
 using Avalonia.Controls;
+using ImageProcessing.SurveyCurves.ViewModels;
+using ScottPlot;
 using ScottPlot.Avalonia;
 using System;
+using System.ComponentModel;
 
 namespace ImageProcessing.SurveyCurves.Views;
 /* Chart - ScottPlot.NET
@@ -9,30 +12,47 @@ namespace ImageProcessing.SurveyCurves.Views;
  */
 public partial class ChartControl : UserControl
 {
-	static readonly double[] testData1 = [1, 1, 1, 5, 5, 5, 4, 3, 2, 1, 2, 1, 6, 1];
+	private readonly ChartModel model = new();
 
 	public ChartControl()
 	{
 		InitializeComponent();
+		DataContext = model;
+		model.PropertyChanged += Model_PropertyChanged;
+		RefreshChartData();
+	}
 
-		ShowSmothedData(testData1, SimpleSmoth);
+	private void Model_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+	{
+		if (e is { PropertyName: nameof(model.CurrentSample) or "" })
+			RefreshChartData();
+	}
+
+	void RefreshChartData()
+	{
+		Chart.Plot.Clear();
+		ShowSmothedData(model.CurrentSample.Data, SimpleSmoth);
 	}
 
 	void ShowSmothedData(double[] data, Func<double[], (double[], double[])> smoth)
 	{
 		AddBars(data);
 		AddCurve(smoth(data));
+		Chart.Plot.Axes.AutoScale();
 		Chart.Refresh();
 	}
 
 	void AddBars(double[] data)
 	{
-		Chart.Plot.Add.Bars(data);
+		var bars = Chart.Plot.Add.Bars(data);
+		bars.Color = new Color(0, 80, 255, 100);
 	}
 
 	void AddCurve((double[] x, double[] y) data)
 	{
-		Chart.Plot.Add.Scatter(data.x, data.y);
+		var scatter = Chart.Plot.Add.Scatter(data.x, data.y);
+		scatter.Color = Colors.Green;
+		scatter.LineWidth = 2;
 	}
 
 	static (double[], double[]) SimpleSmoth(double[] data)

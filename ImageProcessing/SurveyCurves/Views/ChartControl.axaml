@@ -3,11 +3,14 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 			 xmlns:scottPlot="clr-namespace:ScottPlot.Avalonia;assembly=ScottPlot.Avalonia"
+			 xmlns:vm="using:ImageProcessing.SurveyCurves.ViewModels"
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="350"
              x:Class="ImageProcessing.SurveyCurves.Views.ChartControl">
 	<DockPanel>
 		<StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
-			<Button>1</Button>
+			<ComboBox ItemsSource="{x:Static vm:ChartModel.InputSamples}"
+					  DisplayMemberBinding="{Binding Name}"
+					  SelectedItem="{Binding CurrentSample}" />
 		</StackPanel>
 		<scottPlot:AvaPlot Name="Chart"/>
 	</DockPanel>
