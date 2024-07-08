@@ -24,14 +24,14 @@ public partial class ChartControl : UserControl
 
 	private void Model_PropertyChanged(object? sender, PropertyChangedEventArgs e)
 	{
-		if (e is { PropertyName: nameof(model.CurrentSample) or "" })
+		if (e is { PropertyName: nameof(model.CurrentSample) or nameof(model.CurrentSmooth) })
 			RefreshChartData();
 	}
 
 	void RefreshChartData()
 	{
 		Chart.Plot.Clear();
-		ShowSmothedData(model.CurrentSample.Data, SimpleSmoth);
+		ShowSmothedData(model.CurrentSample.Data, model.CurrentSmooth.Func);
 	}
 
 	void ShowSmothedData(double[] data, Func<double[], (double[], double[])> smoth)
@@ -53,23 +53,5 @@ public partial class ChartControl : UserControl
 		var scatter = Chart.Plot.Add.Scatter(data.x, data.y);
 		scatter.Color = Colors.Green;
 		scatter.LineWidth = 2;
-	}
-
-	static (double[], double[]) SimpleSmoth(double[] data)
-	{
-		const double step = 0.1;
-		int count = (int)Math.Floor((data.Length - 1) / step);
-		var (xx, yy) = (new double[count], new double[count]);
-		for (int i = 0; i < count; i++)
-		{
-			var x = i * step;
-			xx[i] = x;
-			var x1 = Math.Floor(x);
-			var x2 = x1 + 1;
-			var (y1, y2) = (data[(int)x1], data[(int)x2]);
-			var (k1, k2) = (x2 - x, x - x1);
-			yy[i] = k1 * k1 * k1 * y1 + k2 * k2 * k2 * y2;
-		}
-		return (xx, yy);
-	}
+	}	
 }

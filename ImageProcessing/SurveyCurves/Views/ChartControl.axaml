@@ -11,6 +11,9 @@
 			<ComboBox ItemsSource="{x:Static vm:ChartModel.InputSamples}"
 					  DisplayMemberBinding="{Binding Name}"
 					  SelectedItem="{Binding CurrentSample}" />
+			<ComboBox ItemsSource="{x:Static vm:ChartModel.SmoothFuncs}"
+					  DisplayMemberBinding="{Binding Name}"
+					  SelectedItem="{Binding CurrentSmooth}" />
 		</StackPanel>
 		<scottPlot:AvaPlot Name="Chart"/>
 	</DockPanel>
