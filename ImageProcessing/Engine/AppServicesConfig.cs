@@ -29,6 +29,6 @@ public static class AppServicesConfig
 	public static void Surveys(IServiceCollection services)
 	{
 		SurveyCurves.ComponentRegistry.RegisterServices(services);
-		SurveyImageSmoth.ComponentRegistry.RegisterServices(services);
+		SurveyImageSmooth.ComponentRegistry.RegisterServices(services);
 	}
 }

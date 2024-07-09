@@ -1,8 +1,8 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using ImageProcessing.Base;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace ImageProcessing.SurveyImageSmoth;
+namespace ImageProcessing.SurveyImageSmooth;
 
 internal class ComponentRegistry : ISurveyComponent
 {

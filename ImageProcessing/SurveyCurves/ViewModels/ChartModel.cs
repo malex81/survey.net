@@ -1,4 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
+using ImageProcessing.Helpers;
 using System;
 
 namespace ImageProcessing.SurveyCurves.ViewModels;
@@ -8,13 +9,17 @@ public record SmoothFunc(string Name, Func<double[], (double[], double[])> Func)
 
 public partial class ChartModel : ObservableObject
 {
+	const double smoothStep = 0.1;
+
 	public static readonly UniformDataSample[] InputSamples = [
 		new("Единицы", [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
 		new("Простой", [1, 1, 1, 5, 5, 5, 4, 3, 2, 1, 2, 1, 6, 1]),
 	];
 
 	public static readonly SmoothFunc[] SmoothFuncs = [
-		new("Temp", SimpleSmooth)
+		new("B-Spline linear", BSpline1),
+		new("B-Spline square", BSpline1),
+		new("Temp", SimpleSmooth),
 	];
 
 	[ObservableProperty]
@@ -26,14 +31,28 @@ public partial class ChartModel : ObservableObject
 	{
 	}
 
-	static (double[], double[]) SimpleSmooth(double[] data)
+	static (double[], double[]) BSpline1(double[] data)
 	{
-		const double step = 0.1;
-		int count = (int)Math.Floor((data.Length - 1) / step);
+		int count = (int)Math.Ceiling((data.Length - 1) / smoothStep);
 		var (xx, yy) = (new double[count], new double[count]);
 		for (int i = 0; i < count; i++)
 		{
-			var x = i * step;
+			var x = i * smoothStep;
+			xx[i] = x;
+			var xn = (int)Math.Floor(x);
+			var xn1 = xn + 1;
+			yy[i] = (x - xn) * data.SafeGet(xn1) + (xn1 - x) * data.SafeGet(xn);
+		}
+		return (xx, yy);
+	}
+
+	static (double[], double[]) SimpleSmooth(double[] data)
+	{
+		int count = (int)Math.Floor((data.Length - 1) / smoothStep);
+		var (xx, yy) = (new double[count], new double[count]);
+		for (int i = 0; i < count; i++)
+		{
+			var x = i * smoothStep;
 			xx[i] = x;
 			var x1 = Math.Floor(x);
 			var x2 = x1 + 1;
