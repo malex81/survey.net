@@ -48,9 +48,10 @@ public partial class App : Application
 				  .AddJsonFile("appsettings.json", optional: false)
 				  .AddCommandLine(Environment.GetCommandLineArgs());
 		}).AddServices(AppServicesConfig.LoggingConfig)
-		  .AddServices(AppServicesConfig.MainModels)
-		  .AddServices(AppServicesConfig.Surveys)
-		  .Build();
+			.AddServices(AppServicesConfig.LocalOptions)
+			.AddServices(AppServicesConfig.MainModels)
+			.AddServices(AppServicesConfig.Surveys)
+			.Build();
 
 		return new() { DataContext = kernel.Services.GetRequiredService<MainWindowModel>() };
 	}

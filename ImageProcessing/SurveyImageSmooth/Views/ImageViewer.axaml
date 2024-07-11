@@ -3,12 +3,21 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 			 xmlns:local="using:ImageProcessing.SurveyImageSmooth.Views"
+			 xmlns:vm="using:ImageProcessing.SurveyImageSmooth.ViewModels"
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="350"
-             x:Class="ImageProcessing.SurveyImageSmooth.Views.ImageViewer">
+             x:Class="ImageProcessing.SurveyImageSmooth.Views.ImageViewer"
+			x:DataType="vm:ImageSetModel">
 	<DockPanel>
 		<Panel DockPanel.Dock="Top">
-			<Button>123</Button>
+			<Button>👀</Button>
 		</Panel>
+		<ListBox DockPanel.Dock="Top" ItemsSource="{Binding Images}">
+			<ListBox.ItemTemplate>
+				<DataTemplate>
+					<Image Margin="2" Height="200" Width="200" Source="{Binding ImageSource}"/>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
 		<local:ImagePresenter />
 	</DockPanel>
 </UserControl>

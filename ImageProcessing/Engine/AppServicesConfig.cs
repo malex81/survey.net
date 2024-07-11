@@ -21,6 +21,11 @@ public static class AppServicesConfig
 		});
 	}
 
+	public static void LocalOptions(IServiceCollection services, IConfigurationRoot appConfig)
+	{
+		services.Configure<SurveyCurves.Config.ImagesOptions>(appConfig.GetSection("Images"));
+	}
+
 	public static void MainModels(IServiceCollection services)
 	{
 		services.AddSingleton<MainWindowModel>();

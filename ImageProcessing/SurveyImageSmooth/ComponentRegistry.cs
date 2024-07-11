@@ -16,5 +16,6 @@ internal class ComponentRegistry : ISurveyComponent
 	public static void RegisterServices(IServiceCollection services)
 	{
 		services.AddSingleton<ISurveyComponent, ComponentRegistry>();
+		services.AddSingleton<ViewModels.ImageSetModel>();
 	}
 }
