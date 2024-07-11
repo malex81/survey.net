@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using ImageProcessing.Helpers;
 using System;
+using System.Linq;
 
 namespace ImageProcessing.SurveyCurves.ViewModels;
 
@@ -9,10 +10,10 @@ public record SmoothFunc(string Name, Func<double[], (double[], double[])> Func)
 
 public partial class ChartModel : ObservableObject
 {
-	const double smoothStep = 0.1;
+	const double smoothStep = 0.05;
 
 	public static readonly UniformDataSample[] InputSamples = [
-		new("Единицы", [1, 1, 1, 1, 1, 1, 1, 1, 1, 1]),
+		new("Единицы", Enumerable.Repeat(1.0, 20).ToArray()),
 		new("Простой", [1, 1, 1, 5, 5, 5, 4, 3, 2, 1, 1, 2, 2.2, 2.4, 3, 3.6, 1, 6, 1]),
 	];
 

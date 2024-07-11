@@ -1,7 +1,10 @@
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Media.Imaging;
 using ImageProcessing.SurveyCurves.ViewModels;
 using ScottPlot;
 using ScottPlot.Avalonia;
+using ScottPlot.Plottables;
 using System;
 using System.ComponentModel;
 
@@ -12,14 +15,42 @@ namespace ImageProcessing.SurveyCurves.Views;
  */
 public partial class ChartControl : UserControl
 {
+	private readonly static Cursor NoneCursor = new(StandardCursorType.None);
+
 	private readonly ChartModel model = new();
+	private readonly Crosshair cross;
 
 	public ChartControl()
 	{
 		InitializeComponent();
 		DataContext = model;
 		model.PropertyChanged += Model_PropertyChanged;
+
+		cross = Chart.Plot.Add.Crosshair(0, 0);
+		cross.IsVisible = false;
+		cross.MarkerShape = MarkerShape.OpenCircle;
+		cross.MarkerSize = 10;
+
+		Chart.PointerMoved += Chart_PointerMoved;
+		Chart.PointerExited += Chart_PointerExited;
 		RefreshChartData();
+	}
+
+	private void Chart_PointerExited(object? sender, Avalonia.Input.PointerEventArgs e)
+	{
+		cross.IsVisible = false;
+	}
+
+	private void Chart_PointerMoved(object? sender, Avalonia.Input.PointerEventArgs e)
+	{
+		if (sender is not Control ctrl) return;
+		var point = e.GetCurrentPoint(ctrl);
+		Pixel mousePixel = new(point.Position.X, point.Position.Y);
+		Coordinates mouseLocation = Chart.Plot.GetCoordinates(mousePixel);
+		cross.Position = mouseLocation;
+		cross.IsVisible = true;
+		Chart.Cursor = NoneCursor;
+		Chart.Refresh();
 	}
 
 	private void Model_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -31,6 +62,11 @@ public partial class ChartControl : UserControl
 	void RefreshChartData()
 	{
 		Chart.Plot.Clear();
+
+		Chart.Cursor = null;
+		Chart.Plot.PlottableList.Add(cross);
+		cross.IsVisible = false;
+
 		ShowSmothedData(model.CurrentSample.Data, model.CurrentSmooth.Func);
 	}
 
