@@ -35,8 +35,8 @@ internal class InvestigateDevice : ISurveyArea
 
 	void SurveyAll()
 	{
-		//using Context context = Context.Create(builder => builder.AllAccelerators().EnableAlgorithms());
-		using Context context = Context.Create(builder => builder.AllAccelerators());
+		using Context context = Context.Create(builder => builder.AllAccelerators().EnableAlgorithms());
+		//using Context context = Context.Create(builder => builder.AllAccelerators());
 		//using Context context = Context.CreateDefault();
 
 		foreach (Device device in context)
@@ -72,40 +72,45 @@ internal class InvestigateDevice : ISurveyArea
 		float[] input = new float[INPUT_SIZE];
 		for (int i = 0; i < INPUT_SIZE; i++) { input[i] = (float)(2f * i * Math.PI / INPUT_SIZE); }
 		timeLog.WriteLine($"fill input: {sw.Elapsed.TotalMilliseconds} ms");
-		sw.Restart();
 
+		sw.Restart();
 		using var inputBuffer = accelerator.Allocate1D(input);
-		using var outputBuffer = accelerator.Allocate1D<float>(OUTPUT_SIZE);
+		using var outputBuffer = accelerator.Allocate1D<double>(OUTPUT_SIZE);
 		timeLog.WriteLine($"upload input: {sw.Elapsed.TotalMilliseconds} ms");
-		sw.Restart();
 
-		var loadedKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<float>>(Kernel);
+		sw.Restart();
+		var loadedKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<double>>(KernelProc);
 		timeLog.WriteLine($"load kernel: {sw.Elapsed.TotalMilliseconds} ms");
-		sw.Restart();
 
+		sw.Restart();
 		loadedKernel(OUTPUT_SIZE, inputBuffer.View, outputBuffer.View);
 		accelerator.Synchronize();
 		timeLog.WriteLine($"exec kernel: {sw.Elapsed.TotalMilliseconds} ms");
-		sw.Restart();
 
+		sw.Restart();
 		loadedKernel(OUTPUT_SIZE, inputBuffer.View, outputBuffer.View);
 		accelerator.Synchronize();
 		timeLog.WriteLine($"re-exec kernel: {sw.Elapsed.TotalMilliseconds} ms");
-		sw.Restart();
 
+		sw.Restart();
 		var hostOutput = outputBuffer.GetAsArray1D();
 		timeLog.WriteLine($"fetch output: {sw.Elapsed.TotalMilliseconds} ms");
-		sw.Restart();
 
-		Console.WriteLine($"Output: {string.Join("; ", hostOutput.Take(100))}");
+		sw.Stop();
+		Console.WriteLine($"Output: {string.Join("; ", hostOutput.Skip(1000).Take(100))}");
 
 		logger.LogInformation("--- Timings ---\r\n{timeLog}", timeLog);
 	}
 
-	static void Kernel(Index1D i, ArrayView<float> data, ArrayView<float> output)
+	static void KernelProc(Index1D i, ArrayView<float> data, ArrayView<double> output)
 	{
-		//output[i] = (float)Math.Sin(data[i % data.Length]);
-		output[i] = XMath.Sin(data[i % data.Length]);
-		// output[i] = data[i % data.Length] * data.Length;
+		var sin = 10*MathF.Sin(data[i % data.Length]);
+		//var sin = XMath.Sin((double)data[i % data.Length]);
+		if (sin < 0) sin *= -1;
+		if (sin < 0.1) sin *= 100;
+		//if (i > 0) sin += output[i - 1]/10;
+		output[i] = sin;
+		//output[i] = XMath.Sin(data[i % data.Length]);
+		//output[i] = data[i % data.Length] * data.Length;
 	}
 }
