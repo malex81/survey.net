@@ -1,4 +1,5 @@
 ﻿using ImageProcessing.MainViewModels;
+using ImageProcessing.SurveyImageSmooth.Config;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -23,7 +24,7 @@ public static class AppServicesConfig
 
 	public static void LocalOptions(IServiceCollection services, IConfigurationRoot appConfig)
 	{
-		services.Configure<SurveyCurves.Config.ImagesOptions>(appConfig.GetSection("Images"));
+		services.Configure<ImagesOptions>(appConfig.GetSection("Images"));
 	}
 
 	public static void MainModels(IServiceCollection services)
@@ -33,7 +34,7 @@ public static class AppServicesConfig
 
 	public static void Surveys(IServiceCollection services)
 	{
-		SurveyCurves.ComponentRegistry.RegisterServices(services);
 		SurveyImageSmooth.ComponentRegistry.RegisterServices(services);
+		SurveyCurves.ComponentRegistry.RegisterServices(services);
 	}
 }

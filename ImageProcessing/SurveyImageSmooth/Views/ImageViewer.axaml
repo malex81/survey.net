@@ -5,16 +5,25 @@
 			 xmlns:local="using:ImageProcessing.SurveyImageSmooth.Views"
 			 xmlns:vm="using:ImageProcessing.SurveyImageSmooth.ViewModels"
              mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="350"
+			 DataContext="{x:Static vm:ImageSetModel.DesignModel}"
              x:Class="ImageProcessing.SurveyImageSmooth.Views.ImageViewer"
-			x:DataType="vm:ImageSetModel">
+			 x:DataType="vm:ImageSetModel">
 	<DockPanel>
 		<Panel DockPanel.Dock="Top">
 			<Button>👀</Button>
 		</Panel>
-		<ListBox DockPanel.Dock="Top" ItemsSource="{Binding Images}">
+		<ListBox DockPanel.Dock="Top" ItemsSource="{Binding Images}" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+			<ListBox.Styles>
+				<Style Selector="ListBox /template/ VirtualizingStackPanel">
+					<Setter Property="Orientation" Value="Horizontal" />
+				</Style>
+			</ListBox.Styles>
 			<ListBox.ItemTemplate>
 				<DataTemplate>
-					<Image Margin="2" Height="200" Width="200" Source="{Binding ImageSource}"/>
+					<StackPanel>
+						<TextBlock Text="{Binding Title}"/>
+						<Image Margin="2" Height="160" Width="160" Source="{Binding ImageSource}"/>
+					</StackPanel>
 				</DataTemplate>
 			</ListBox.ItemTemplate>
 		</ListBox>
