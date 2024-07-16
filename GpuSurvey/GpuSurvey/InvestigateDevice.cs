@@ -104,11 +104,10 @@ internal class InvestigateDevice : ISurveyArea
 
 	static void KernelProc(Index1D i, ArrayView<float> data, ArrayView<double> output)
 	{
-		var sin = 10*MathF.Sin(data[i % data.Length]);
-		//var sin = XMath.Sin((double)data[i % data.Length]);
+		//var sin = 10*MathF.Sin(data[i % data.Length]);
+		var sin = XMath.Sin((double)data[i % data.Length]);
 		if (sin < 0) sin *= -1;
 		if (sin < 0.1) sin *= 100;
-		//if (i > 0) sin += output[i - 1]/10;
 		output[i] = sin;
 		//output[i] = XMath.Sin(data[i % data.Length]);
 		//output[i] = data[i % data.Length] * data.Length;
