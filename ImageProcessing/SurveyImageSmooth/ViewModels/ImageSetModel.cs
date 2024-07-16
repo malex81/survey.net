@@ -1,5 +1,4 @@
-﻿using Avalonia.Media;
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ImageProcessing.Helpers;
 using ImageProcessing.SurveyImageSmooth.Config;
@@ -11,7 +10,7 @@ using System.Reactive.Linq;
 
 namespace ImageProcessing.SurveyImageSmooth.ViewModels;
 
-record ImageItem(string Title, IImage ImageSource);
+record ImageItem(string Title, Bitmap ImageSource);
 
 internal partial class ImageSetModel : ObservableObject
 {
@@ -20,7 +19,7 @@ internal partial class ImageSetModel : ObservableObject
 	{
 		foreach (var filePath in Directory.EnumerateFiles(dirPath))
 		{
-			IImage? image = null;
+			Bitmap? image = null;
 			try
 			{
 				image = new Bitmap(filePath);
