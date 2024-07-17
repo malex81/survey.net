@@ -3,6 +3,7 @@
 		<OutputType>WinExe</OutputType>
 		<TargetFramework>net8.0</TargetFramework>
 		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
@@ -27,6 +28,8 @@
 		<PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.0" />
 		<PackageReference Include="System.Reactive" Version="6.0.1" />
 		<PackageReference Include="System.Text.Json" Version="8.0.4" />
+		<PackageReference Include="ILGPU" Version="1.5.1" />
+		<PackageReference Include="ILGPU.Algorithms" Version="1.5.1" />
 	</ItemGroup>
 
 	<ItemGroup>

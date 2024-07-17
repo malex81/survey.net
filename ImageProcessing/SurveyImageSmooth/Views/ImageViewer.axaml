@@ -29,6 +29,13 @@
 				</DataTemplate>
 			</ListBox.ItemTemplate>
 		</ListBox>
-		<local:ImagePresenter />
+		<Panel>
+			<local:ImagePresenter Name="ImagePresenter" SourceBitmap="{Binding SelectedImage.ImageSource}" />
+			<TextBlock Text="{Binding #ImagePresenter.TimingText}" Background="#a777"
+					   FontSize="10"
+					   Padding="10"
+					   HorizontalAlignment="Right"
+					   VerticalAlignment="Top"/>
+		</Panel>
 	</DockPanel>
 </UserControl>
