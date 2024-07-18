@@ -15,6 +15,7 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using AvCtrl = Avalonia.Controls;
 
@@ -72,7 +73,7 @@ internal class ImagePresenter : AvCtrl.Control
 	[MemberNotNullWhen(false, nameof(gpuContext), nameof(gpuDevice))]
 	static bool IsDesignMode => AvCtrl.Design.IsDesignMode;
 
-	static void KernelProc(Index2D ind, ArrayView2D<uint, Stride2D.DenseY> src, ArrayView2D<uint, Stride2D.DenseX> output)
+	static void KernelProc(Index2D ind, ArrayView2D<uint, Stride2D.DenseX> src, ArrayView2D<uint, Stride2D.DenseX> output)
 	{
 		//var outSize = output.IntExtent;
 		//var k1 = (1.0 * outSize.X) / outSize.Y;
@@ -87,8 +88,8 @@ internal class ImagePresenter : AvCtrl.Control
 	private IDisposable? sourcePeg;
 
 	private Accelerator? accelerator;
-	private Action<Index2D, ArrayView2D<uint, Stride2D.DenseY>, ArrayView2D<uint, Stride2D.DenseX>>? kernel;
-	private ArrayView2D<uint, Stride2D.DenseY> sourceView;
+	private Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView2D<uint, Stride2D.DenseX>>? kernel;
+	private ArrayView2D<uint, Stride2D.DenseX> sourceView;
 
 	public ImagePresenter()
 	{
@@ -111,15 +112,14 @@ internal class ImagePresenter : AvCtrl.Control
 		if (sourceBitmap == null || IsDesignMode) throw new InvalidOperationException();
 		var _disp = new DisposableList();
 		accelerator = gpuDevice.CreateAccelerator(gpuContext).DisposeWith(_disp);
-		kernel = accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<uint, Stride2D.DenseY>, ArrayView2D<uint, Stride2D.DenseX>>(KernelProc);
+		kernel = accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView2D<uint, Stride2D.DenseX>>(KernelProc);
 		var srcSize = sourceBitmap.PixelSize;
-		var imageBuffer = accelerator.Allocate2DDenseY<uint>(new Index2D(srcSize.Height, srcSize.Width)).DisposeWith(_disp);
-		var buff = new uint[srcSize.Height, srcSize.Width];
+		var buff = new uint[srcSize.Width, srcSize.Height];
 		fixed (uint* p = buff)
 		{
-			sourceBitmap.CopyPixels(new PixelRect(srcSize), (IntPtr)p, (int)imageBuffer.LengthInBytes, srcSize.Width * 4);
-			imageBuffer.CopyFromCPU(buff);
+			sourceBitmap.CopyPixels(new PixelRect(srcSize), (IntPtr)p, buff.Length*4, srcSize.Width * 4);
 		}
+		var imageBuffer = accelerator.Allocate2DDenseX(buff).DisposeWith(_disp);
 		sourceView = imageBuffer.View;
 		return _disp;
 	}
@@ -127,7 +127,7 @@ internal class ImagePresenter : AvCtrl.Control
 	[MemberNotNullWhen(true, nameof(sourceView), nameof(kernel), nameof(accelerator), nameof(gpuContext))]
 	bool CanRender => kernel != null && accelerator != null && Bounds.Width > 0 && Bounds.Height > 0;
 
-	unsafe SKBitmap? RenderResultImage()
+	SKBitmap? RenderResultImage()
 	{
 		if (!CanRender) return null;
 		var bmpSize = PixelSize.FromSize(Bounds.Size, 1);
@@ -138,25 +138,21 @@ internal class ImagePresenter : AvCtrl.Control
 			kernel(buffSize, sourceView, outputBuffer.View);
 			accelerator.Synchronize();
 			var data = outputBuffer.GetRawData();
-			var bmp = new SKBitmap(bmpSize.Width, bmpSize.Height);
-			fixed (byte* p = data.Array)
-			{
-				IntPtr ptr = (IntPtr)p;
-				bmp.SetPixels(ptr);
-			}
+			//var bmp = new SKBitmap(bmpSize.Width, bmpSize.Height);
+			//fixed (byte* p = data.Array)
+			//{
+			//	IntPtr ptr = (IntPtr)p;
+			//	bmp.SetPixels(ptr);
+			//}
+
+			var bmp = new SKBitmap();
+			// pin the managed array so that the GC doesn't move it
+			var gcHandle = GCHandle.Alloc(data.Array, GCHandleType.Pinned);
+			// install the pixels with the color type of the pixel data
+			var info = new SKImageInfo(bmpSize.Width, bmpSize.Height, SKImageInfo.PlatformColorType, SKAlphaType.Unpremul);
+			var res = bmp.InstallPixels(info, gcHandle.AddrOfPinnedObject(), info.RowBytes, (addr, ctx) => { gcHandle.Free(); });
 			return bmp;
 		}
-	}
-
-	double rndMeanTime = -1;
-	IDisposable? invalidTimer;
-	void InvalidateTimingText()
-	{
-		invalidTimer ??= DispatcherTimer.RunOnce(() =>
-		{
-			TimingText = $"FPS: {1000 / rndMeanTime:g4} ({rndMeanTime:g4}ms)";
-			invalidTimer = null;
-		}, TimeSpan.FromSeconds(0.1));
 	}
 
 	void SkiaDraw(SKCanvas canvas)
@@ -171,4 +167,18 @@ internal class ImagePresenter : AvCtrl.Control
 	}
 
 	public override void Render(DrawingContext context) => context.Custom(skDrawer);
+
+	#region Render FPS text
+	double rndMeanTime = -1;
+	IDisposable? invalidTimer;
+	void InvalidateTimingText()
+	{
+		invalidTimer ??= DispatcherTimer.RunOnce(() =>
+		{
+			TimingText = $"FPS: {1000 / rndMeanTime:g4} ({rndMeanTime:g4}ms)";
+			invalidTimer = null;
+		}, TimeSpan.FromSeconds(0.1));
+	}
+	#endregion
+
 }
