@@ -14,6 +14,7 @@ using SkiaSharp;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading;
 using AvCtrl = Avalonia.Controls;
 
@@ -53,11 +54,19 @@ internal class ImagePresenter : AvCtrl.Control
 	private static readonly Context? gpuContext;
 	private static readonly Device? gpuDevice;
 
+	static Device ChooseBestDevice(Context context) => (context.Devices
+			.Where(d => d.AcceleratorType != AcceleratorType.CPU)
+			.OrderByDescending(d => d.MaxNumThreads)
+			.FirstOrDefault()
+		?? context.Devices.FirstOrDefault())
+		?? throw new NotSupportedException("GPU acceleration not support");
+
 	static ImagePresenter()
 	{
 		if (AvCtrl.Design.IsDesignMode) return;
 		gpuContext = Context.Create(builder => builder.Default().EnableAlgorithms());
-		gpuDevice = gpuContext.GetPreferredDevice(preferCPU: false);
+		gpuDevice = ChooseBestDevice(gpuContext);
+		//gpuDevice = gpuContext.GetPreferredDevice(preferCPU: false);
 	}
 
 	[MemberNotNullWhen(false, nameof(gpuContext), nameof(gpuDevice))]
