@@ -4,7 +4,7 @@ namespace ImageProcessing.Helpers.Internals
 {
 	internal class DisposableAction : IDisposable
 	{
-		Action<IDisposable> dispAction;
+		Action<IDisposable>? dispAction;
 		private readonly bool obligatory;
 
 		public DisposableAction(Action<IDisposable> onDispose, bool obligatory)

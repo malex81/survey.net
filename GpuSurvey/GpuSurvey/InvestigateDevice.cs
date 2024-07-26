@@ -58,7 +58,11 @@ internal class InvestigateDevice : ISurveyArea
 		logger.LogInformation("Device:\t{device}"
 			+ "\nAccelerator:\t{accelerator}",
 			device, accInfo.ToString());
-		ExecuteKernel(accelerator);
+		try
+		{
+			ExecuteKernel(accelerator);
+		}
+		catch (Exception ex) { logger.LogError(ex, "Error on execute Kernel..."); }
 		Thread.Sleep(100);
 	}
 
