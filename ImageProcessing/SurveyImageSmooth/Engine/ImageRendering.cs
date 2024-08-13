@@ -19,12 +19,12 @@ internal class ImageRendering(Control control)
 
 	static readonly AcceleratorType[] accPriority = [AcceleratorType.Cuda, AcceleratorType.OpenCL, AcceleratorType.CPU];
 
-	static Device ChooseBestDevice(Context context) => (context.Devices
-			.Where(d => d.AcceleratorType != AcceleratorType.CPU)
+	static Device ChooseBestDevice(Context context) => context.Devices
+			//.Where(d => d.AcceleratorType != AcceleratorType.CPU)
 			.OrderBy(d => Array.IndexOf(accPriority, d.AcceleratorType))
 			.ThenByDescending(d => d.MaxNumThreads)
 			.FirstOrDefault()
-		?? context.Devices.FirstOrDefault())
+		//?? context.Devices.FirstOrDefault())
 		?? throw new NotSupportedException("GPU acceleration not support");
 
 	static ImageRendering()
