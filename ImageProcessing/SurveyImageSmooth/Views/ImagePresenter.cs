@@ -96,7 +96,7 @@ internal class ImagePresenter : Control
 	public override void Render(DrawingContext context)
 	{
 		context.Custom(skDrawer);
-		Dispatcher.UIThread.Post(InvalidateVisual);
+		//Dispatcher.UIThread.Post(InvalidateVisual);
 	}
 
 	#region Render FPS text

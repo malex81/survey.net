@@ -4,6 +4,7 @@ using ILGPU;
 using ILGPU.Runtime;
 using ImageProcessing.Helpers;
 using System;
+using System.Numerics;
 
 namespace ImageProcessing.SurveyImageSmooth.Engine;
 
@@ -18,7 +19,7 @@ public record RenderEntry(Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>> Ex
 
 public static class RenderKernel
 {
-	public record struct ImageInfo(int Width, int Height, uint RestColor, uint ShiftX);
+	public record struct ImageInfo(int Width, int Height, Matrix3x2 Transform);
 
 	public static RenderEntry SimpleTestKernel(this Accelerator accelerator)
 	{
@@ -40,8 +41,10 @@ public static class RenderKernel
 	{
 		var kernel = accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView<uint>, ImageInfo>((ind, output, src, info) =>
 		{
-			var (x, y) = (ind.X - info.ShiftX, (int)(ind.Y + 200*(MathF.Sin((float)info.ShiftX / 100)-1.2)));
-			output[ind] = 0 <= x && x < info.Width && 0 <= y && y < info.Height ? src[x + y * info.Width] : info.RestColor;
+			var tr = info.Transform;
+			Vector2 v = Vector2.Transform(new(ind.X, ind.Y), tr);
+			var (x, y) = (v.X, v.Y);
+			output[ind] = 0 <= x && x < info.Width && 0 <= y && y < info.Height ? src[(int)(x + y * info.Width)] : 0xffffaf56;
 			if ((output[ind] & 0xff000000) != 0xff000000)
 				output[ind] = 0xffffaf36;
 		});
@@ -56,24 +59,11 @@ public static class RenderKernel
 		}
 		var imageBuffer = accelerator.Allocate1D(buff).DisposeWith(release);
 
-		uint restColor = 0xff00a000;
-		uint nextColor()
-		{
-			restColor += 0x00030201;
-			restColor |= 0xff000000;
-			return restColor;
-		}
-		uint shiftX = 0;
-		uint nextShift()
-		{
-			shiftX += 7;
-			if (shiftX > 1500) shiftX = 0;
-			return shiftX;
-		}
+		Matrix3x2 tr = Matrix3x2.CreateRotation(MathF.PI/10);
 
 		return new((ind, output) =>
 		{
-			kernel(ind, output, imageBuffer.View, new(srcSize.Width, srcSize.Height, nextColor(), nextShift()));
+			kernel(ind, output, imageBuffer.View, new(srcSize.Width, srcSize.Height, tr));
 			accelerator.Synchronize();
 		}, release.Dispose);
 	}
