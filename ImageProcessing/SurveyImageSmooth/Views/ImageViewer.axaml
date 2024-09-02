@@ -31,11 +31,17 @@
 		</ListBox>
 		<Panel>
 			<local:ImagePresenter Name="ImagePresenter" SourceBitmap="{Binding SelectedImage.ImageSource}" />
-			<TextBlock Text="{Binding #ImagePresenter.TimingText}" Background="#a777"
-					   FontSize="10"
-					   Padding="10"
-					   HorizontalAlignment="Right"
-					   VerticalAlignment="Top"/>
+			<StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
+				<TextBlock Text="{Binding #ImagePresenter.TimingText}" Background="#a777"
+						   FontSize="10"
+						   Padding="10" />
+				<StackPanel HorizontalAlignment="Right">
+				<Slider Value="0"
+						Minimum="0"
+						Maximum="180"
+						Width="200" />
+				</StackPanel>
+			</StackPanel>
 		</Panel>
 	</DockPanel>
 </UserControl>
