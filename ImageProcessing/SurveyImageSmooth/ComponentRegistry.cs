@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ImageProcessing.SurveyImageSmooth;
 
-internal class ComponentRegistry(ImageSetModel viewModel) : ISurveyComponent
+internal class ComponentRegistry(ImageViewerModel viewModel) : ISurveyComponent
 {
 	private Views.ImageViewer? imageViewer;
 
@@ -17,6 +17,6 @@ internal class ComponentRegistry(ImageSetModel viewModel) : ISurveyComponent
 	public static void RegisterServices(IServiceCollection services)
 	{
 		services.AddSingleton<ISurveyComponent, ComponentRegistry>();
-		services.AddSingleton<ImageSetModel>();
+		services.AddSingleton<ImageViewerModel>();
 	}
 }

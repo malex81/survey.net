@@ -34,9 +34,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="Themes\CommonStyles.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </None>
+		<!--<AvaloniaResource Include="Assets\**" />-->
+		<AvaloniaResource Include="**/*.xaml" />
 	</ItemGroup>
 
 	<Target Name="CopyConfig" AfterTargets="AfterBuild">

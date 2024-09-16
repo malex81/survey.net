@@ -1,7 +1,7 @@
 ﻿using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 
-namespace Multivox.Avalonia.Base.Themes;
+namespace ImageProcessing.Themes;
 
 public class CommonStyles : Styles
 {

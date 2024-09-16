@@ -12,9 +12,10 @@ namespace ImageProcessing.SurveyImageSmooth.ViewModels;
 
 record ImageItem(string Title, Bitmap ImageSource);
 
-internal partial class ImageSetModel : ObservableObject
+internal partial class ImageViewerModel : ObservableObject
 {
-	public static readonly ImageSetModel DesignModel = new("./##/image samples");
+	#region static part
+	public static readonly ImageViewerModel DesignModel = new("./##/image samples");
 	static IEnumerable<ImageItem> LoadImages(string dirPath)
 	{
 		foreach (var filePath in Directory.EnumerateFiles(dirPath))
@@ -29,20 +30,21 @@ internal partial class ImageSetModel : ObservableObject
 				yield return new(Path.GetFileName(filePath), image);
 		}
 	}
+	#endregion
 
 	[ObservableProperty]
 	private ImageItem? selectedImage;
 
 	public ImageItem[] Images { get; }
 
-	ImageSetModel(string relPath)
+	ImageViewerModel(string relPath)
 	{
 		var samplesPath = PathHelper.FindDirectory(relPath);
 		Images = samplesPath == null ? [] : LoadImages(samplesPath).ToArray();
 		SelectedImage = Images.FirstOrDefault();
 	}
 
-	public ImageSetModel(IOptions<ImagesOptions> imageOptions) : this(imageOptions.Value.SamplesPath ?? "")
+	public ImageViewerModel(IOptions<ImagesOptions> imageOptions) : this(imageOptions.Value.SamplesPath ?? "")
 	{
 	}
 }
