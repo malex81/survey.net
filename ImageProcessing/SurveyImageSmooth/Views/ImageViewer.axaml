@@ -36,10 +36,16 @@
 						   FontSize="10"
 						   Padding="10" />
 				<StackPanel HorizontalAlignment="Right" Width="200">
-					<Label>Zoom</Label>
-					<Slider Value="0" Minimum="-4" Maximum="4" />
-					<Label>Rotate</Label>
-					<Slider Value="0" Minimum="-180" Maximum="180" />
+					<Label Content="{Binding Zoom, StringFormat='Zoom: {0:g3}'}"/>
+					<Slider Value="{Binding ZoomRatio}"
+							Minimum="-4" Maximum="4"
+							TickFrequency="0.1"
+							IsSnapToTickEnabled="True"/>
+					<Label Content="{Binding RotateAngle, StringFormat='Rotate: {0:g3}°'}"/>
+					<Slider Value="{Binding RotateAngle}"
+							Minimum="-180" Maximum="180"
+							TickFrequency="1"
+							IsSnapToTickEnabled="True"/>
 				</StackPanel>
 			</StackPanel>
 		</Panel>

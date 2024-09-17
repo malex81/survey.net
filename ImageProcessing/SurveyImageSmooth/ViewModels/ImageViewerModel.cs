@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using ImageProcessing.Helpers;
 using ImageProcessing.SurveyImageSmooth.Config;
 using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -34,8 +35,14 @@ internal partial class ImageViewerModel : ObservableObject
 
 	[ObservableProperty]
 	private ImageItem? selectedImage;
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(Zoom))]
+	private double zoomRatio = 0;
+	[ObservableProperty]
+	private double rotateAngle = 0;
 
 	public ImageItem[] Images { get; }
+	public double Zoom => Math.Pow(2, ZoomRatio);
 
 	ImageViewerModel(string relPath)
 	{
