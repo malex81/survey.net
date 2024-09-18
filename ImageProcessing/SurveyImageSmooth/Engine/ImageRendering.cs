@@ -39,13 +39,13 @@ internal class ImageRendering(Control control)
 	private Accelerator? accelerator;
 	private RenderEntry? renderEntry;
 
-	public unsafe void LoadImageSource(Bitmap sourceBmp)
+	public unsafe void BuildDrawKernel(Bitmap sourceBmp, Func<BitmapDrawParams> obtainParams)
 	{
 		if (sourcePeg != null) throw new InvalidOperationException();
 		sourcePeg = [];
 		accelerator = gpuDevice.CreateAccelerator(gpuContext).DisposeWith(sourcePeg);
 		//renderEntry = accelerator.SimpleTestKernel().DisposeWith(sourcePeg);
-		renderEntry = accelerator.DrawBitmapKernel(sourceBmp).DisposeWith(sourcePeg);
+		renderEntry = accelerator.DrawBitmapKernel(sourceBmp, obtainParams).DisposeWith(sourcePeg);
 	}
 
 	public void FreeSource()

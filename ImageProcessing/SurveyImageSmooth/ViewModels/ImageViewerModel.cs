@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reactive.Linq;
 
 namespace ImageProcessing.SurveyImageSmooth.ViewModels;
@@ -37,12 +38,22 @@ internal partial class ImageViewerModel : ObservableObject
 	private ImageItem? selectedImage;
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(Zoom))]
-	private double zoomRatio = 0;
+	[NotifyPropertyChangedFor(nameof(Transform))]
+	private float zoomRatio = 0;
 	[ObservableProperty]
-	private double rotateAngle = 0;
+	[NotifyPropertyChangedFor(nameof(Transform))]
+	private float rotateAngle = 0;
 
 	public ImageItem[] Images { get; }
-	public double Zoom => Math.Pow(2, ZoomRatio);
+	public float Zoom => MathF.Pow(2, ZoomRatio);
+	public Matrix3x2 Transform
+	{
+		get
+		{
+			Matrix3x2 tr = Matrix3x2.CreateRotation(RotateAngle * MathF.PI / 180);
+			return tr;
+		}
+	}
 
 	ImageViewerModel(string relPath)
 	{

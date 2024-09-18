@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using ILGPU;
 using ILGPU.Runtime;
@@ -16,6 +17,8 @@ public record RenderEntry(Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>> Ex
 		Free?.Invoke();
 	}
 }
+
+public record struct BitmapDrawParams(Matrix3x2 Transform);
 
 public static class RenderKernel
 {
@@ -37,7 +40,7 @@ public static class RenderKernel
 		}, null);
 	}
 
-	public unsafe static RenderEntry DrawBitmapKernel(this Accelerator accelerator, Bitmap sourceBmp)
+	public unsafe static RenderEntry DrawBitmapKernel(this Accelerator accelerator, Bitmap sourceBmp, Func<BitmapDrawParams> obtainParams)
 	{
 		var kernel = accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView<uint>, ImageInfo>((ind, output, src, info) =>
 		{
@@ -59,10 +62,11 @@ public static class RenderKernel
 		}
 		var imageBuffer = accelerator.Allocate1D(buff).DisposeWith(release);
 
-		Matrix3x2 tr = Matrix3x2.CreateRotation(MathF.PI/10);
-
 		return new((ind, output) =>
 		{
+			var dp = obtainParams();
+			Matrix3x2.Invert(dp.Transform, out var tr);
+
 			kernel(ind, output, imageBuffer.View, new(srcSize.Width, srcSize.Height, tr));
 			accelerator.Synchronize();
 		}, release.Dispose);

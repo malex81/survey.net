@@ -30,7 +30,9 @@
 			</ListBox.ItemTemplate>
 		</ListBox>
 		<Panel>
-			<local:ImagePresenter Name="ImagePresenter" SourceBitmap="{Binding SelectedImage.ImageSource}" />
+			<local:ImagePresenter Name="ImagePresenter"
+								  SourceBitmap="{Binding SelectedImage.ImageSource}"
+								  Transform="{Binding Transform}"/>
 			<StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
 				<TextBlock Text="{Binding #ImagePresenter.TimingText}" Background="#a777"
 						   FontSize="10"
@@ -39,7 +41,7 @@
 					<Label Content="{Binding Zoom, StringFormat='Zoom: {0:g3}'}"/>
 					<Slider Value="{Binding ZoomRatio}"
 							Minimum="-4" Maximum="4"
-							TickFrequency="0.1"
+							TickFrequency="0.02"
 							IsSnapToTickEnabled="True"/>
 					<Label Content="{Binding RotateAngle, StringFormat='Rotate: {0:g3}°'}"/>
 					<Slider Value="{Binding RotateAngle}"
