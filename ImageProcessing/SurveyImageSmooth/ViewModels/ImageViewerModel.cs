@@ -1,4 +1,5 @@
-﻿using Avalonia.Media.Imaging;
+﻿using Avalonia;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ImageProcessing.Helpers;
 using ImageProcessing.SurveyImageSmooth.Config;
@@ -35,6 +36,7 @@ internal partial class ImageViewerModel : ObservableObject
 	#endregion
 
 	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(Transform))]
 	private ImageItem? selectedImage;
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(Zoom))]
@@ -43,6 +45,9 @@ internal partial class ImageViewerModel : ObservableObject
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(Transform))]
 	private float rotateAngle = 0;
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(Transform))]
+	private Rect viewBounds;
 
 	public ImageItem[] Images { get; }
 	public float Zoom => MathF.Pow(2, ZoomRatio);
@@ -50,8 +55,17 @@ internal partial class ImageViewerModel : ObservableObject
 	{
 		get
 		{
-			Matrix3x2 tr = Matrix3x2.CreateRotation(RotateAngle * MathF.PI / 180);
-			return tr;
+			if (SelectedImage == null) return Matrix3x2.Identity;
+
+			var imgSize = SelectedImage.ImageSource.Size;
+			Matrix3x2 tr = Matrix3x2.CreateRotation(RotateAngle * MathF.PI / 180, (imgSize / 2).ToVector());
+
+			var shift = (ViewBounds.Size - imgSize) / 2;
+			//tr.Translation += shift.ToVector();
+
+			var scale = Matrix3x2.CreateScale(Zoom, (imgSize / 2).ToVector());
+
+			return tr * scale;
 		}
 	}
 
