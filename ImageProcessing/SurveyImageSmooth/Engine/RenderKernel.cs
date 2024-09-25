@@ -47,7 +47,7 @@ public static class RenderKernel
 			var tr = info.Transform;
 			Vector2 v = Vector2.Transform(new(ind.X, ind.Y), tr);
 			var (x, y) = (v.X, v.Y);
-			output[ind] = 0 <= x && x < info.Width && 0 <= y && y < info.Height ? src[(int)(x + y * info.Width)] : 0xffffaf56;
+			output[ind] = 0 <= x && x < info.Width && 0 <= y && y < info.Height ? src[(int)x + (int)y * info.Width] : 0xffffaf56;
 			if ((output[ind] & 0xff000000) != 0xff000000)
 				output[ind] = 0xffffaf36;
 		});

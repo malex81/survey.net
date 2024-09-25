@@ -56,16 +56,12 @@ internal partial class ImageViewerModel : ObservableObject
 		get
 		{
 			if (SelectedImage == null) return Matrix3x2.Identity;
-
 			var imgSize = SelectedImage.ImageSource.Size;
-			Matrix3x2 tr = Matrix3x2.CreateRotation(RotateAngle * MathF.PI / 180, (imgSize / 2).ToVector());
 
-			var shift = (ViewBounds.Size - imgSize) / 2;
-			//tr.Translation += shift.ToVector();
-
-			var scale = Matrix3x2.CreateScale(Zoom, (imgSize / 2).ToVector());
-
-			return tr * scale;
+			return Matrix3x2.CreateTranslation(-(imgSize / 2).ToVector())
+				* Matrix3x2.CreateScale(Zoom)
+				* Matrix3x2.CreateRotation(RotateAngle * MathF.PI / 180)
+				* Matrix3x2.CreateTranslation((ViewBounds.Size / 2).ToVector());
 		}
 	}
 
