@@ -34,11 +34,13 @@
 								  Bounds="{Binding ViewBounds, Mode=OneWayToSource}"
 								  SourceBitmap="{Binding SelectedImage.ImageSource}"
 								  Transform="{Binding Transform}"/>
-			<StackPanel HorizontalAlignment="Right" VerticalAlignment="Top">
-				<TextBlock Text="{Binding #ImagePresenter.TimingText}" Background="#a777"
-						   FontSize="10"
-						   Padding="10" />
-				<StackPanel HorizontalAlignment="Right" Width="200">
+			<Border Background="#a777"
+					Padding="4 6"
+					HorizontalAlignment="Right"
+					VerticalAlignment="Top">
+				<StackPanel Width="200">
+					<TextBlock Text="{Binding #ImagePresenter.TimingText}"
+							   FontSize="10" Padding="4"/>
 					<Label Content="{Binding Zoom, StringFormat='Zoom: {0:g3}'}"/>
 					<Slider Value="{Binding ZoomRatio}"
 							Minimum="-4" Maximum="4"
@@ -50,7 +52,7 @@
 							TickFrequency="1"
 							IsSnapToTickEnabled="True"/>
 				</StackPanel>
-			</StackPanel>
+			</Border>
 		</Panel>
 	</DockPanel>
 </UserControl>
