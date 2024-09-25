@@ -79,11 +79,11 @@ internal class InvestigateDevice : ISurveyArea
 
 		sw.Restart();
 		using var inputBuffer = accelerator.Allocate1D(input);
-		using var outputBuffer = accelerator.Allocate1D<double>(OUTPUT_SIZE);
+		using var outputBuffer = accelerator.Allocate1D<float>(OUTPUT_SIZE);
 		timeLog.WriteLine($"upload input: {sw.Elapsed.TotalMilliseconds} ms");
 
 		sw.Restart();
-		var loadedKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<double>>(KernelProc);
+		var loadedKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<float>, ArrayView<float>>(KernelProc);
 		timeLog.WriteLine($"load kernel: {sw.Elapsed.TotalMilliseconds} ms");
 
 		sw.Restart();
@@ -106,12 +106,12 @@ internal class InvestigateDevice : ISurveyArea
 		logger.LogInformation("--- Timings ---\r\n{timeLog}", timeLog);
 	}
 
-	static void KernelProc(Index1D i, ArrayView<float> data, ArrayView<double> output)
+	static void KernelProc(Index1D i, ArrayView<float> data, ArrayView<float> output)
 	{
 		//var sin = 10*MathF.Sin(data[i % data.Length]);
-		var sin = XMath.Sin((double)data[i % data.Length]);
+		var sin = XMath.Sin(data[i % data.Length]);
 		if (sin < 0) sin *= -1;
-		if (sin < 0.1) sin *= 100;
+		if (sin < 0.1f) sin *= 100;
 		output[i] = sin;
 		//output[i] = XMath.Sin(data[i % data.Length]);
 		//output[i] = data[i % data.Length] * data.Length;

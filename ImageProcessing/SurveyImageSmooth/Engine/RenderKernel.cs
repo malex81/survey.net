@@ -6,6 +6,7 @@ using ILGPU.Algorithms;
 using ILGPU.Algorithms.Optimization.Optimizers;
 using ILGPU.Runtime;
 using ImageProcessing.Helpers;
+using ImageProcessing.RenderingMath;
 using System;
 using System.Numerics;
 
@@ -24,16 +25,7 @@ public record struct BitmapDrawParams(Matrix3x2 Transform);
 
 public static class RenderKernel
 {
-	public record struct ImageInfo(int Width, int Height, Matrix3x2 Transform);
-
-	static uint GetPixel(this ArrayView<uint> source, ImageInfo info, int x, int y)
-		=> 0 <= x && x < info.Width && 0 <= y && y < info.Height ? source[x + y * info.Width] : 0;
-	
-	static uint GetPixel(this ArrayView<uint> source, ImageInfo info, Vector2 pos)
-		=> source.GetPixel(info, (int)pos.X, (int)pos.Y);
-
-	static uint GetPixelClamed(this ArrayView<uint> source, ImageInfo info, int x, int y)
-		=> source[XMath.Clamp(x, 0, info.Width - 1) + XMath.Clamp(y, 0, info.Height - 1) * info.Width];
+	public record struct ImageInfo(PixelSize Size, Matrix3x2 Transform);
 
 	public static RenderEntry SimpleTestKernel(this Accelerator accelerator)
 	{
@@ -57,11 +49,7 @@ public static class RenderKernel
 		{
 			var tr = info.Transform;
 			Vector2 v = Vector2.Transform(new(ind.X, ind.Y), tr);
-			//var (x, y) = (v.X, v.Y);
-			//output[ind] = 0 <= x && x < info.Width && 0 <= y && y < info.Height ? src[(int)x + (int)y * info.Width] : 0xffffaf56;
-			//if ((output[ind] & 0xff000000) != 0xff000000)
-			//	output[ind] = 0xffffaf36;
-			output[ind] = src.GetPixelClamed(info, (int)v.X, (int)v.Y);
+			output[ind] = src.GetPixelClamped(info.Size, v.ToPixel());
 		});
 
 		DisposableList release = [];
@@ -79,7 +67,7 @@ public static class RenderKernel
 			var dp = obtainParams();
 			Matrix3x2.Invert(dp.Transform, out var tr);
 
-			kernel(ind, output, imageBuffer.View, new(srcSize.Width, srcSize.Height, tr));
+			kernel(ind, output, imageBuffer.View, new(srcSize, tr));
 			accelerator.Synchronize();
 		}, release.Dispose);
 	}
