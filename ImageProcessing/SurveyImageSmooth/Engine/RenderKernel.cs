@@ -48,8 +48,8 @@ public static class RenderKernel
 		var kernel = accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView<uint>, ImageInfo>((ind, output, src, info) =>
 		{
 			var tr = info.Transform;
-			Vector2 v = Vector2.Transform(new(ind.X, ind.Y), tr);
-			output[ind] = src.GetPixelClamped(info.Size, v.ToPixel());
+			Vector2 v = Vector2.Transform(ind.ToVector(), tr);
+			output[ind] = src.GetPixelClamped(info.Size, v.ToIndex());
 		});
 
 		DisposableList release = [];
