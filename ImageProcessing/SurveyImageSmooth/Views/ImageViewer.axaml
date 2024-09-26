@@ -29,12 +29,12 @@
 				</DataTemplate>
 			</ListBox.ItemTemplate>
 		</ListBox>
-		<Panel>
+		<Panel Background="#f777">
 			<local:ImagePresenter Name="ImagePresenter"
 								  Bounds="{Binding ViewBounds, Mode=OneWayToSource}"
 								  SourceBitmap="{Binding SelectedImage.ImageSource}"
 								  Transform="{Binding Transform}"/>
-			<Border Background="#a777"
+			<Border Background="#a444"
 					Padding="4 6"
 					HorizontalAlignment="Right"
 					VerticalAlignment="Top">

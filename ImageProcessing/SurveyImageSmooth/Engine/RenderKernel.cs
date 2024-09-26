@@ -49,7 +49,7 @@ public static class RenderKernel
 		{
 			var tr = info.Transform;
 			Vector2 v = Vector2.Transform(ind.ToVector(), tr);
-			output[ind] = src.GetPixelClamped(info.Size, v.ToIndex());
+			output[ind] = src.GetBiliniarPixel(info.Size, v);
 		});
 
 		DisposableList release = [];
