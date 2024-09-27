@@ -21,11 +21,12 @@ public record RenderEntry(Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>> Ex
 	}
 }
 
-public record struct BitmapDrawParams(Matrix3x2 Transform);
+public enum SmoothType { None, Bilinear };
+public record struct BitmapDrawParams(Matrix3x2 Transform, SmoothType Smooth);
 
 public static class RenderKernel
 {
-	public record struct ImageInfo(PixelSize Size, Matrix3x2 Transform);
+	public record struct ImageInfo(PixelSize Size, Matrix3x2 Transform, SmoothType Smooth);
 
 	public static RenderEntry SimpleTestKernel(this Accelerator accelerator)
 	{
@@ -49,7 +50,10 @@ public static class RenderKernel
 		{
 			var tr = info.Transform;
 			Vector2 v = Vector2.Transform(ind.ToVector(), tr);
-			output[ind] = src.GetBiliniarPixel(info.Size, v);
+			if(info.Smooth == SmoothType.None)
+				output[ind] = src.GetPixel(info.Size, v);
+			else if (info.Smooth == SmoothType.Bilinear)
+				output[ind] = src.GetBilinearPixel(info.Size, v);
 		});
 
 		DisposableList release = [];
@@ -67,7 +71,7 @@ public static class RenderKernel
 			var dp = obtainParams();
 			Matrix3x2.Invert(dp.Transform, out var tr);
 
-			kernel(ind, output, imageBuffer.View, new(srcSize, tr));
+			kernel(ind, output, imageBuffer.View, new(srcSize, tr, dp.Smooth));
 			accelerator.Synchronize();
 		}, release.Dispose);
 	}

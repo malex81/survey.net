@@ -49,44 +49,23 @@ internal class ImagePresenter : Control
 	}
 	#endregion TimingText Direct Avalonia Property
 
-	#region Transform Direct Avalonia Property
-	private Matrix3x2 transform = Matrix3x2.Identity;
+	#region DrawParams Direct Avalonia Property
+	private BitmapDrawParams drawParams = default;
 
-	public static readonly DirectProperty<ImagePresenter, Matrix3x2> TransformProperty =
-		AvaloniaProperty.RegisterDirect<ImagePresenter, Matrix3x2>(nameof(Transform), o => o.Transform, (o, v) => o.Transform = v);
+	public static readonly DirectProperty<ImagePresenter, BitmapDrawParams> DrawParamsProperty =
+		AvaloniaProperty.RegisterDirect<ImagePresenter, BitmapDrawParams>(nameof(DrawParams), o => o.DrawParams, (o, v) => o.DrawParams = v);
 
-	public Matrix3x2 Transform
+	public BitmapDrawParams DrawParams
 	{
-		get => transform;
+		get => drawParams;
 		set
 		{
-			SetAndRaise(TransformProperty, ref transform, value);
+			SetAndRaise(DrawParamsProperty, ref drawParams, value);
 			InvalidateVisual();
 		}
 	}
-	#endregion Transform Direct Avalonia Property
+	#endregion DrawParams Direct Avalonia Property
 
-	//#region Transform Direct Avalonia Property
-	//private TransformCoord2D transform = TransformCoord2D.E;
-
-	//public static readonly DirectProperty<ImageControl, TransformCoord2D> TransformProperty =
-	//	AvaloniaProperty.RegisterDirect<ImageControl, TransformCoord2D>
-	//	(
-	//		nameof(Transform),
-	//		o => o.Transform,
-	//		(o, v) => o.Transform = v
-	//	);
-
-	//public TransformCoord2D Transform
-	//{
-	//	get => transform;
-	//	set
-	//	{
-	//		SetAndRaise(TransformProperty, ref transform, value);
-	//		InvalidateRendering();
-	//	}
-	//}
-	//#endregion Transform Direct Avalonia Property
 
 	private readonly CustomActionDrawer skDrawer;
 	private readonly ImageRendering? imageRendering;
@@ -105,12 +84,10 @@ internal class ImagePresenter : Control
 		{
 			imageRendering.FreeSource();
 			if (sourceBitmap != null)
-				imageRendering.BuildDrawKernel(sourceBitmap, ObtainDrawParams);
+				imageRendering.BuildDrawKernel(sourceBitmap, () => drawParams);
 		}
 		InvalidateVisual();
 	}
-
-	BitmapDrawParams ObtainDrawParams() => new(transform);
 
 	[MemberNotNullWhen(true, nameof(imageRendering))]
 	bool CanRender => imageRendering != null && Bounds.Width > 0 && Bounds.Height > 0;

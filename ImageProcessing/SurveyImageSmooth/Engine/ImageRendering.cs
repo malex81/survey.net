@@ -64,8 +64,6 @@ internal class ImageRendering(Control control)
 		var buffSize = new Index2D(bmpSize.Width, bmpSize.Height);
 
 		using var outputBuffer = accelerator.Allocate2DDenseX<uint>(buffSize);
-		//kernel(buffSize, sourceView, outputBuffer.View);
-		//accelerator.Synchronize();
 		renderEntry.Exec(buffSize, outputBuffer);
 		var data = outputBuffer.GetRawData();
 
