@@ -42,6 +42,7 @@ internal partial class ImageViewerModel : ObservableObject
 	public static SmoothInfo[] SmoothItems => [
 		new("No smooth", SmoothType.None),
 		new("Bilinear", SmoothType.Bilinear),
+		new("Square B-Spline", SmoothType.BSpline2),
 	];
 
 	#endregion

@@ -1,7 +1,9 @@
 ﻿using Avalonia;
 using ILGPU;
 using ILGPU.Algorithms;
+using ImageProcessing.Helpers;
 using System.Numerics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ImageProcessing.RenderingMath;
 public static class CalcProc
@@ -45,5 +47,34 @@ public static class CalcProc
 			source.GetPixelClamped(size, ind0 + new Index2D(1, 0)),
 			source.GetPixelClamped(size, ind0 + new Index2D(1, 1)));
 		return MixColors(MixColors(c00, c01, diff.Y), MixColors(c10, c11, diff.Y), diff.X);
+	}
+
+	static uint BSpline2MixColors(uint prev, uint cur, uint next, float t)
+	{
+		var (cc, cp, cn) = (UnfoldColor(cur), UnfoldColor(prev), UnfoldColor(next));
+		var res = new uint[4];
+		for (int i = 0; i < 4; i++)
+		{
+			res[i] = (uint)((0.5 + t * (1 - t)) * cc[i] + 0.5 * MathExt.Sqr(1 - t) * cp[i] + 0.5 * MathExt.Sqr(t) * cn[i]);
+		}
+		return FoldColor(res);
+	}
+	public static uint GetBSpline2Pixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
+	{
+		var v0 = new Vector2(pos.X + 0.5f, pos.Y + 0.5f);
+		var v1 = new Vector2(XMath.Floor(v0.X), XMath.Floor(v0.Y));
+		var ind0 = v1.ToIndex();
+		if (ind0.X < 0 || ind0.Y < 0 || ind0.X >= size.Width || ind0.Y >= size.Height) return 0;
+		var diff = v0 - v1;
+		var yy = new uint[3];
+		for (int indY = 0; indY < 3; indY++)
+		{
+			yy[indY] = BSpline2MixColors(
+				source.GetPixelClamped(size, ind0 + new Index2D(-1, indY - 1)),
+				source.GetPixelClamped(size, ind0 + new Index2D(0, indY - 1)),
+				source.GetPixelClamped(size, ind0 + new Index2D(1, indY - 1)),
+				diff.X);
+		}
+		return BSpline2MixColors(yy[0], yy[1], yy[2], diff.Y);
 	}
 }
