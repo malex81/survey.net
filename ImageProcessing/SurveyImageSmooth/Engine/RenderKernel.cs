@@ -50,10 +50,12 @@ public static class RenderKernel
 		{
 			var tr = info.Transform;
 			Vector2 v = Vector2.Transform(ind.ToVector(), tr);
-			if(info.Smooth == SmoothType.None)
-				output[ind] = src.GetPixel(info.Size, v);
-			else if (info.Smooth == SmoothType.Bilinear)
-				output[ind] = src.GetBilinearPixel(info.Size, v);
+			output[ind] = info.Smooth switch
+			{
+				SmoothType.None => src.GetPixel(info.Size, v),
+				SmoothType.Bilinear => src.GetBilinearPixel(info.Size, v),
+				_ => 0
+			};
 		});
 
 		DisposableList release = [];

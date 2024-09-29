@@ -43,22 +43,23 @@ public partial class ChartModel : ObservableObject
 			xx[i] = x;
 			var xn = (int)Math.Floor(x);
 			var xn1 = xn + 1;
-			yy[i] = (x - xn) * data.SafeGet(xn1) + (xn1 - x) * data.SafeGet(xn);
+			yy[i] = (x - xn) * data.GetClamped(xn1) + (xn1 - x) * data.GetClamped(xn);
 		}
 		return (xx, yy);
 	}
 
 	static (double[], double[]) BSpline2(double[] data)
 	{
-		int count = (int)Math.Ceiling(data.Length / smoothStep);
+		int count = (int)Math.Ceiling((data.Length-1) / smoothStep);
 		var (xx, yy) = (new double[count], new double[count]);
 		for (int i = 0; i < count; i++)
 		{
 			var x = i * smoothStep;
-			xx[i] = x - 0.5;
-			var n = (int)Math.Floor(x);
-			var t = x - n;
-			yy[i] = (0.5 + t * (1 - t)) * data.SafeGet(n) + 0.5 * MathExt.Sqr(1 - t) * data.SafeGet(n - 1) + 0.5 * MathExt.Sqr(t) * data.SafeGet(n + 1);
+			xx[i] = x;
+			var x1 = x + 0.5;
+			var n = (int)Math.Floor(x1);
+			var t = x1 - n;
+			yy[i] = (0.5 + t * (1 - t)) * data.GetClamped(n) + 0.5 * MathExt.Sqr(1 - t) * data.GetClamped(n - 1) + 0.5 * MathExt.Sqr(t) * data.GetClamped(n + 1);
 		}
 		return (xx, yy);
 	}
@@ -74,8 +75,8 @@ public partial class ChartModel : ObservableObject
 			var n = (int)Math.Floor(x);
 			var n2 = (int)Math.Floor(x * 2);
 			var t = x * 2 - n2;
-			var (dn, dn1) = (data.SafeGet(n), data.SafeGet(n + 1));
-			var (d1, d2, d3) = n2 == 2 * n ? ((data.SafeGet(n - 1) + dn) / 2, dn, (dn1 + dn) / 2) : (dn, (dn1 + dn) / 2, dn1);
+			var (dn, dn1) = (data.GetClamped(n), data.GetClamped(n + 1));
+			var (d1, d2, d3) = n2 == 2 * n ? ((data.GetClamped(n - 1) + dn) / 2, dn, (dn1 + dn) / 2) : (dn, (dn1 + dn) / 2, dn1);
 			yy[i] = d1 * 0.5 * MathExt.Sqr(1 - t) + d2 * (0.5 + t * (1 - t)) + d3 * 0.5 * MathExt.Sqr(t);
 		}
 		return (xx, yy);
