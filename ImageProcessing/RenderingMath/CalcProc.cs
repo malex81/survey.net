@@ -22,6 +22,8 @@ public static class CalcProc
 		=> source[XMath.Clamp(ind.X, 0, size.Width - 1) + XMath.Clamp(ind.Y, 0, size.Height - 1) * size.Width];
 	#endregion
 
+	static bool ContainsPoint(this PixelSize size, Vector2 pos) => pos.X >= 0 && pos.Y >= 0 && pos.X < size.Width && pos.Y < size.Height;
+
 	static uint[] UnfoldColor(uint c) => [(c & 0xff000000) >> 24, (c & 0x00ff0000) >> 16, (c & 0x0000ff00) >> 8, c & 0x000000ff];
 	static uint FoldColor(uint[] cc) => (cc[0] << 24) + (cc[1] << 16) + (cc[2] << 8) + cc[3];
 
@@ -38,9 +40,9 @@ public static class CalcProc
 
 	public static uint GetBilinearPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
 	{
+		if (!size.ContainsPoint(pos)) return 0;
 		var v1 = new Vector2(XMath.Floor(pos.X), XMath.Floor(pos.Y));
 		var ind0 = v1.ToIndex();
-		if (ind0.X < 0 || ind0.Y < 0 || ind0.X >= size.Width || ind0.Y >= size.Height) return 0;
 		var diff = pos - v1;
 		var (c00, c01, c10, c11) = (source.GetPixelClamped(size, ind0),
 			source.GetPixelClamped(size, ind0 + new Index2D(0, 1)),
@@ -55,16 +57,16 @@ public static class CalcProc
 		var res = new uint[4];
 		for (int i = 0; i < 4; i++)
 		{
-			res[i] = (uint)((0.5 + t * (1 - t)) * cc[i] + 0.5 * MathExt.Sqr(1 - t) * cp[i] + 0.5 * MathExt.Sqr(t) * cn[i]);
+			res[i] = (uint)XMath.Round((0.5f + t * (1f - t)) * cc[i] + 0.5f * MathExt.Sqr(1f - t) * cp[i] + 0.5f * MathExt.Sqr(t) * cn[i]);
 		}
 		return FoldColor(res);
 	}
 	public static uint GetBSpline2Pixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
 	{
+		if (!size.ContainsPoint(pos)) return 0;
 		var v0 = new Vector2(pos.X + 0.5f, pos.Y + 0.5f);
 		var v1 = new Vector2(XMath.Floor(v0.X), XMath.Floor(v0.Y));
 		var ind0 = v1.ToIndex();
-		if (ind0.X < 0 || ind0.Y < 0 || ind0.X >= size.Width || ind0.Y >= size.Height) return 0;
 		var diff = v0 - v1;
 		var yy = new uint[3];
 		for (int indY = 0; indY < 3; indY++)
