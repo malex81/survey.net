@@ -21,6 +21,7 @@ public partial class ChartModel : ObservableObject
 		new("B-Spline linear", BSpline1),
 		new("B-Spline square", BSpline2),
 		new("B-Spline 1.5", BSpline2_1),
+		new("Cubic interpolation", CubicInterpolation),
 		new("Temp", SimpleSmooth),
 	];
 
@@ -31,6 +32,26 @@ public partial class ChartModel : ObservableObject
 
 	public ChartModel()
 	{
+	}
+
+	static (double[], double[]) CubicInterpolation(double[] data)
+	{
+		int count = (int)Math.Ceiling((data.Length - 1) / smoothStep);
+		var (xx, yy) = (new double[count], new double[count]);
+		for (int i = 0; i < count; i++)
+		{
+			var x = i * smoothStep;
+			xx[i] = x;
+			var x0 = (int)Math.Floor(x);
+			var (ym1, y0, y1, y2) = (data.GetClamped(x0 - 1), data.GetClamped(x0), data.GetClamped(x0 + 1), data.GetClamped(x0 + 2));
+			var (_vm1, _v0, _v1) = (y0 - ym1, y1 - y0, y2 - y1);
+			var (v0, v1) = (_vm1 * _v0 > 0 ? (_vm1 + _v0) / 2 : 0, _v1 * _v0 > 0 ? (_v1 + _v0) / 2 : 0);
+			var a = v0 + v1 - 2 * (y1 - y0);
+			var b = 3 * (y1 - y0) - 2 * v0 - v1;
+			var t = x - x0;
+			yy[i] = a * MathExt.Cube(t) + b * MathExt.Sqr(t) + v0 * t + y0;
+		}
+		return (xx, yy);
 	}
 
 	static (double[], double[]) BSpline1(double[] data)
@@ -50,7 +71,7 @@ public partial class ChartModel : ObservableObject
 
 	static (double[], double[]) BSpline2(double[] data)
 	{
-		int count = (int)Math.Ceiling((data.Length-1) / smoothStep);
+		int count = (int)Math.Ceiling((data.Length - 1) / smoothStep);
 		var (xx, yy) = (new double[count], new double[count]);
 		for (int i = 0; i < count; i++)
 		{

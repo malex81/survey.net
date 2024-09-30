@@ -43,8 +43,8 @@ internal partial class ImageViewerModel : ObservableObject
 		new("No smooth", SmoothType.None),
 		new("Bilinear", SmoothType.Bilinear),
 		new("Square B-Spline", SmoothType.BSpline2),
+		new("Bicubic", SmoothType.Biсubic),
 	];
-
 	#endregion
 
 	[ObservableProperty]

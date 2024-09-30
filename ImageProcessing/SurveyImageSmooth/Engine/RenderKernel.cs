@@ -21,7 +21,7 @@ public record RenderEntry(Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>> Ex
 	}
 }
 
-public enum SmoothType { None, Bilinear, BSpline2 };
+public enum SmoothType { None, Bilinear, BSpline2, Biсubic };
 public record struct BitmapDrawParams(Matrix3x2 Transform, SmoothType Smooth);
 
 public static class RenderKernel
@@ -55,6 +55,7 @@ public static class RenderKernel
 				SmoothType.None => src.GetPixel(info.Size, v),
 				SmoothType.Bilinear => src.GetBilinearPixel(info.Size, v),
 				SmoothType.BSpline2 => src.GetBSpline2Pixel(info.Size, v),
+				SmoothType.Biсubic => src.GetBicubicPixel(info.Size, v),
 				_ => 0
 			};
 		});

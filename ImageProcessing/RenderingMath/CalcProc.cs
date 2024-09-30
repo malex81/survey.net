@@ -79,4 +79,39 @@ public static class CalcProc
 		}
 		return BSpline2MixColors(yy[0], yy[1], yy[2], diff.Y);
 	}
+
+	static float CalcCubicValue(float ym1, float y0, float y1, float y2, float t)
+	{
+		var (_vm1, _v0, _v1) = (y0 - ym1, y1 - y0, y2 - y1);
+		var (v0, v1) = (_vm1 * _v0 > 0 ? (_vm1 + _v0) / 2 : 0, _v1 * _v0 > 0 ? (_v1 + _v0) / 2 : 0);
+		var a = v0 + v1 - 2 * (y1 - y0);
+		var b = 3 * (y1 - y0) - 2 * v0 - v1;
+		return a * MathExt.Cube(t) + b * MathExt.Sqr(t) + v0 * t + y0;
+	}
+	public static uint GetBicubicPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
+	{
+		if (!size.ContainsPoint(pos)) return 0;
+
+		var v1 = new Vector2(XMath.Floor(pos.X), XMath.Floor(pos.Y));
+		var ind0 = v1.ToIndex();
+		var diff = pos - v1;
+
+		var yy = new float[4, 4];
+		for (int iy = 0; iy < 4; iy++)
+		{
+			var xx = new uint[4, 4];
+			for (int ix = 0; ix < 4; ix++)
+			{
+				var cc = UnfoldColor(source.GetPixelClamped(size, ind0 + new Index2D(ix - 1, iy - 1)));
+				for (int ic = 0; ic < 4; ic++)
+					xx[ix, ic] = cc[ic];
+			}
+			for (int ic = 0; ic < 4; ic++)
+				yy[iy, ic] = CalcCubicValue(xx[0, ic], xx[1, ic], xx[2, ic], xx[3, ic], diff.X);
+		}
+		var res = new uint[4];
+		for (int ic = 0; ic < 4; ic++)
+			res[ic] = (uint)XMath.Clamp(CalcCubicValue(yy[0, ic], yy[1, ic], yy[2, ic], yy[3, ic], diff.Y), 0, 255);
+		return FoldColor(res);
+	}
 }
