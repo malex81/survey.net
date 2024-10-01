@@ -4,9 +4,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:vm="using:ImageProcessing.MainViewModels"
         mc:Ignorable="d" d:DesignWidth="520" d:DesignHeight="450"
-        x:Class="ImageProcessing.MainWindow"
 		ExtendClientAreaToDecorationsHint="true"
 		WindowState="Maximized"
+        x:Class="ImageProcessing.MainWindow"
         Title="Обработка изображений">
 	<Design.DataContext>
 		<vm:MainWindowDesignModel/>
@@ -15,9 +15,13 @@
 		<Style Selector="Window[WindowState=Maximized]">
 			<Setter Property="Padding" Value="8" />
 		</Style>
-		<!--<Style Selector="Window">
+		<!--
+		ExtendClientAreaToDecorationsHint="true"
+		WindowState="Maximized"
+		<Style Selector="Window">
 			<Setter Property="Background" Value="{DynamicResource BgMainBrush}" />
-		</Style>-->
+		</Style>
+		-->
 	</Window.Styles>
 	<DockPanel>
 		<ListBox ItemsSource="{Binding Items}"
