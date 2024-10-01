@@ -52,7 +52,7 @@ public static class RenderKernel
 			Vector2 v = Vector2.Transform(ind.ToVector(), tr);
 			output[ind] = info.Smooth switch
 			{
-				SmoothType.None => src.GetPixel(info.Size, v),
+				SmoothType.None => src.GetNearestPixel(info.Size, v),
 				SmoothType.Bilinear => src.GetBilinearPixel(info.Size, v),
 				SmoothType.BSpline2 => src.GetBSpline2Pixel(info.Size, v),
 				SmoothType.Biсubic => src.GetBicubicPixel(info.Size, v),

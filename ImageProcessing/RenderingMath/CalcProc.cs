@@ -3,11 +3,13 @@ using ILGPU;
 using ILGPU.Algorithms;
 using ImageProcessing.Helpers;
 using System.Numerics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ImageProcessing.RenderingMath;
 public static class CalcProc
 {
+	static Vector2 Round(this Vector2 v) => new(XMath.Round(v.X), XMath.Round(v.Y));
+	static bool ContainsPoint(this PixelSize size, Vector2 pos) => pos.X >= 0 && pos.Y >= 0 && pos.X < size.Width && pos.Y < size.Height;
+
 	#region GetPixel variants
 	static uint GetPixel(this ArrayView<uint> source, PixelSize size, int x, int y)
 		=> 0 <= x && x < size.Width && 0 <= y && y < size.Height ? source[x + y * size.Width] : 0;
@@ -15,17 +17,15 @@ public static class CalcProc
 	public static uint GetPixel(this ArrayView<uint> source, PixelSize size, Index2D ind)
 		=> source.GetPixel(size, ind.X, ind.Y);
 
-	public static uint GetPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
-		=> source.GetPixel(size, pos.ToIndex());
-
 	public static uint GetPixelClamped(this ArrayView<uint> source, PixelSize size, Index2D ind)
 		=> source[XMath.Clamp(ind.X, 0, size.Width - 1) + XMath.Clamp(ind.Y, 0, size.Height - 1) * size.Width];
 	#endregion
 
-	static bool ContainsPoint(this PixelSize size, Vector2 pos) => pos.X >= 0 && pos.Y >= 0 && pos.X < size.Width && pos.Y < size.Height;
-
 	static uint[] UnfoldColor(uint c) => [(c & 0xff000000) >> 24, (c & 0x00ff0000) >> 16, (c & 0x0000ff00) >> 8, c & 0x000000ff];
 	static uint FoldColor(uint[] cc) => (cc[0] << 24) + (cc[1] << 16) + (cc[2] << 8) + cc[3];
+
+	public static uint GetNearestPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
+		=> size.ContainsPoint(pos) ? source.GetPixelClamped(size, pos.Round().ToIndex()) : 0;
 
 	static uint MixColors(uint color1, uint color2, float w)
 	{
@@ -37,7 +37,6 @@ public static class CalcProc
 		}
 		return FoldColor(res);
 	}
-
 	public static uint GetBilinearPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
 	{
 		if (!size.ContainsPoint(pos)) return 0;
