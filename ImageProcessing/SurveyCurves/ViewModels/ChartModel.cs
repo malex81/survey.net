@@ -14,7 +14,7 @@ public partial class ChartModel : ObservableObject
 
 	public static readonly UniformDataSample[] InputSamples = [
 		new("Единицы", Enumerable.Repeat(1.0, 20).ToArray()),
-		new("Простой", [1, 1, 1, 5, 5, 5, 4, 3, 2, 1, 1, 2, 2.2, 2.4, 3, 3.6, 1, 6, 1]),
+		new("Простой", [1, 1, 1, 5, 5, 5, 4, 3, 2, 1, 1, 2, 2.2, 2.4, 3, 3.6, 1, 7, 1.1, 1, 6, 0.5, 1, 6.7, 7, 4]),
 	];
 
 	public static readonly SmoothFunc[] SmoothFuncs = [
@@ -34,6 +34,13 @@ public partial class ChartModel : ObservableObject
 	{
 	}
 
+	static double GetMeanDerivative(double v1, double v2)
+	{
+		var vm = v1 * v2;
+		//return vm > 0 ? Math.Sqrt(vm) * Math.Sign(v1) : 0;
+		return vm > 0 ? (v1 > 0 ? Math.Min(v1, v2) : Math.Max(v1, v2)) : 0;
+	}
+
 	static (double[], double[]) CubicInterpolation(double[] data)
 	{
 		int count = (int)Math.Ceiling((data.Length - 1) / smoothStep);
@@ -45,7 +52,7 @@ public partial class ChartModel : ObservableObject
 			var x0 = (int)Math.Floor(x);
 			var (ym1, y0, y1, y2) = (data.GetClamped(x0 - 1), data.GetClamped(x0), data.GetClamped(x0 + 1), data.GetClamped(x0 + 2));
 			var (_vm1, _v0, _v1) = (y0 - ym1, y1 - y0, y2 - y1);
-			var (v0, v1) = (_vm1 * _v0 > 0 ? (_vm1 + _v0) / 2 : 0, _v1 * _v0 > 0 ? (_v1 + _v0) / 2 : 0);
+			var (v0, v1) = (GetMeanDerivative(_vm1, _v0), GetMeanDerivative(_v1, _v0));//(_vm1 * _v0 > 0 ? (_vm1 + _v0) / 2 : 0, _v1 * _v0 > 0 ? (_v1 + _v0) / 2 : 0);
 			var a = v0 + v1 - 2 * (y1 - y0);
 			var b = 3 * (y1 - y0) - 2 * v0 - v1;
 			var t = x - x0;

@@ -2,6 +2,7 @@
 using ILGPU;
 using ILGPU.Algorithms;
 using ImageProcessing.Helpers;
+using System;
 using System.Numerics;
 
 namespace ImageProcessing.RenderingMath;
@@ -79,10 +80,11 @@ public static class CalcProc
 		return BSpline2MixColors(yy[0], yy[1], yy[2], diff.Y);
 	}
 
+	static float GetMeanDerivative(float v1, float v2) => v1 > 0 && v2 > 0 ? XMath.Min(v1, v2) : v1 < 0 && v2 < 0 ? XMath.Max(v1, v2) : 0;
 	static float CalcCubicValue(float ym1, float y0, float y1, float y2, float t)
 	{
 		var (_vm1, _v0, _v1) = (y0 - ym1, y1 - y0, y2 - y1);
-		var (v0, v1) = (_vm1 * _v0 > 0 ? (_vm1 + _v0) / 2 : 0, _v1 * _v0 > 0 ? (_v1 + _v0) / 2 : 0);
+		var (v0, v1) = (GetMeanDerivative(_vm1, _v0), GetMeanDerivative(_v1, _v0));
 		var a = v0 + v1 - 2 * (y1 - y0);
 		var b = 3 * (y1 - y0) - 2 * v0 - v1;
 		return a * MathExt.Cube(t) + b * MathExt.Sqr(t) + v0 * t + y0;
