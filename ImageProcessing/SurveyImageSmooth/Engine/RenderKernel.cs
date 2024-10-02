@@ -21,7 +21,7 @@ public record RenderEntry(Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>> Ex
 	}
 }
 
-public enum SmoothType { None, Bilinear, BSpline2, Biсubic };
+public enum SmoothType { None, Bilinear, BSpline2, Biсubic, Blur };
 public record struct BitmapDrawParams(Matrix3x2 Transform, SmoothType Smooth);
 
 public static class RenderKernel

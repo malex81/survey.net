@@ -80,7 +80,14 @@ public static class CalcProc
 		return BSpline2MixColors(yy[0], yy[1], yy[2], diff.Y);
 	}
 
-	static float GetMeanDerivative(float v1, float v2) => v1 > 0 && v2 > 0 ? XMath.Min(v1, v2) : v1 < 0 && v2 < 0 ? XMath.Max(v1, v2) : 0;
+	static float GetMeanDerivative(float v1, float v2)
+	{
+		if (v1 * v2 <= 0) return 0;
+		var vMax = 3 * XMath.Min(XMath.Abs(v1), XMath.Abs(v2));
+		var v = (v1 + v2) / 2;
+		return XMath.Abs(v) > vMax ? XMath.Sign(v) * vMax : v;
+	}
+
 	static float CalcCubicValue(float ym1, float y0, float y1, float y2, float t)
 	{
 		var (_vm1, _v0, _v1) = (y0 - ym1, y1 - y0, y2 - y1);

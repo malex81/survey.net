@@ -44,6 +44,7 @@ internal partial class ImageViewerModel : ObservableObject
 		new("Bilinear", SmoothType.Bilinear),
 		new("Bicubic", SmoothType.Biсubic),
 		new("Square B-Spline", SmoothType.BSpline2),
+		new("Gaussian blur", SmoothType.Blur),
 	];
 	#endregion
 

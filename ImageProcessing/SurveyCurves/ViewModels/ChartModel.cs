@@ -36,9 +36,13 @@ public partial class ChartModel : ObservableObject
 
 	static double GetMeanDerivative(double v1, double v2)
 	{
-		var vm = v1 * v2;
+		//var vm = v1 * v2;
 		//return vm > 0 ? Math.Sqrt(vm) * Math.Sign(v1) : 0;
-		return vm > 0 ? (v1 > 0 ? Math.Min(v1, v2) : Math.Max(v1, v2)) : 0;
+		//return vm > 0 ? (v1 > 0 ? Math.Min(v1, v2) : Math.Max(v1, v2)) : 0;
+		if (v1 * v2 <= 0) return 0;
+		var vMax = 3 * Math.Min(Math.Abs(v1), Math.Abs(v2));
+		var v = (v1 + v2) / 2;
+		return Math.Abs(v) > vMax ? Math.Sign(v) * vMax : v;
 	}
 
 	static (double[], double[]) CubicInterpolation(double[] data)
