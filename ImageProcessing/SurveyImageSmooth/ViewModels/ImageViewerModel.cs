@@ -1,8 +1,11 @@
 ﻿using Avalonia;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ImageProcessing.Helpers;
+using ImageProcessing.MouseTools;
+using ImageProcessing.RenderingMath;
 using ImageProcessing.SurveyCurves.ViewModels;
 using ImageProcessing.SurveyImageSmooth.Config;
 using ImageProcessing.SurveyImageSmooth.Engine;
@@ -20,7 +23,7 @@ namespace ImageProcessing.SurveyImageSmooth.ViewModels;
 record ImageItem(string Title, Bitmap ImageSource);
 record struct SmoothInfo(string Name, SmoothType Smooth);
 
-internal partial class ImageViewerModel : ObservableObject
+internal partial class ImageViewerModel : ObservableObject, IMouseDragModel
 {
 	#region static part
 	public static readonly ImageViewerModel DesignModel = new("./##/image samples");
@@ -64,6 +67,9 @@ internal partial class ImageViewerModel : ObservableObject
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(DrawParams))]
 	private SmoothInfo smoothInfo = SmoothItems[0];
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(DrawParams))]
+	private Vector2 imageShift = new();
 
 	public ImageItem[] Images { get; }
 	public float Zoom => MathF.Pow(2, ZoomRatio);
@@ -85,9 +91,23 @@ internal partial class ImageViewerModel : ObservableObject
 		if (SelectedImage == null) return Matrix3x2.Identity;
 		var imgSize = SelectedImage.ImageSource.Size;
 
-		return Matrix3x2.CreateTranslation(-(imgSize / 2).ToVector())
+		return Matrix3x2.CreateTranslation(-(imgSize / 2).ToVector().Round())
 			* Matrix3x2.CreateScale(Zoom)
 			* Matrix3x2.CreateRotation(RotateAngle * MathF.PI / 180)
-			* Matrix3x2.CreateTranslation((ViewBounds.Size / 2).ToVector());
+			* Matrix3x2.CreateTranslation((ViewBounds.Size / 2).ToVector() + ImageShift);
+	}
+
+	DragState? lastDrag;
+	public void DragStart(DragState dragState)
+	{
+		lastDrag = dragState;
+	}
+
+	public void DragProcess(DragState dragState)
+	{
+		if (lastDrag == null || lastDrag.MouseButton != MouseButton.Left) return;
+		var move = dragState.CurrentPos - lastDrag.CurrentPos;
+		ImageShift += move.ToVector();
+		lastDrag = dragState;
 	}
 }

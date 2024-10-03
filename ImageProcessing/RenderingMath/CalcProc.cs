@@ -9,7 +9,7 @@ using System.Numerics;
 namespace ImageProcessing.RenderingMath;
 public static class CalcProc
 {
-	static Vector2 Round(this Vector2 v) => new(XMath.Round(v.X), XMath.Round(v.Y));
+	internal static Vector2 Round(this Vector2 v) => new(XMath.Round(v.X), XMath.Round(v.Y));
 	static bool ContainsPoint(this PixelSize size, Vector2 pos) => pos.X >= 0 && pos.Y >= 0 && pos.X < size.Width && pos.Y < size.Height;
 
 	#region GetPixel variants

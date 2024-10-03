@@ -13,6 +13,7 @@ public class CustomActionDrawer : SimpleDrawOperation
 	public CustomActionDrawer(Action<SKCanvas> drawAction, Visual? parent = null)
 	{
 		this.drawAction = drawAction;
+		IsHitTestVisible = true;
 		parent?.GetObservable(Visual.BoundsProperty).Subscribe(b =>
 		{
 			Bounds = b;

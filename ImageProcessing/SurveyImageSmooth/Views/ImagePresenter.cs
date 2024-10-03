@@ -6,6 +6,7 @@ using Avalonia.Skia;
 using Avalonia.Threading;
 using ILGPU;
 using ILGPU.Runtime;
+using ImageProcessing.MouseTools;
 using ImageProcessing.SkiaHelpers;
 using ImageProcessing.SurveyImageSmooth.Engine;
 using SkiaSharp;
@@ -66,13 +67,13 @@ internal class ImagePresenter : Control
 	}
 	#endregion DrawParams Direct Avalonia Property
 
-
 	private readonly CustomActionDrawer skDrawer;
 	private readonly ImageRendering? imageRendering;
 
 	public ImagePresenter()
 	{
 		skDrawer = new(SkiaDraw, this);
+		_ = new MouseDragHandler(this);
 		if (!Design.IsDesignMode)
 			imageRendering = new(this);
 	}
