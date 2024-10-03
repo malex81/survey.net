@@ -50,7 +50,7 @@
 					</Grid>
 					<Label Content="{Binding Zoom, StringFormat='Zoom: {0:g3}'}"/>
 					<Slider Value="{Binding ZoomRatio}"
-							Minimum="-4" Maximum="4"
+							Minimum="-3" Maximum="8"
 							TickFrequency="0.02"
 							IsSnapToTickEnabled="True"/>
 					<Label Content="{Binding RotateAngle, StringFormat='Rotate: {0:g3}°'}"/>

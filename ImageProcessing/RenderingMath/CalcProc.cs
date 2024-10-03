@@ -3,6 +3,7 @@ using ILGPU;
 using ILGPU.Algorithms;
 using ImageProcessing.Helpers;
 using System;
+using System.Linq;
 using System.Numerics;
 
 namespace ImageProcessing.RenderingMath;
@@ -33,10 +34,24 @@ public static class CalcProc
 		var (cc1, cc2) = (UnfoldColor(color1), UnfoldColor(color2));
 		var res = new uint[4];
 		for (int i = 0; i < 4; i++)
-		{
-			res[i] = (uint)(cc1[i] * (1 - w) + cc2[i] * w);
-		}
+			res[i] = (uint)XMath.Round(cc1[i] * (1 - w) + cc2[i] * w);
 		return FoldColor(res);
+	}
+	static uint MixColors4(uint c00, uint c01, uint c10, uint c11, float w0, float w1)
+	{
+		var cc = new uint[] { c00, c01, c10, c11 };
+		var ww = new float[] { (1 - w0) * (1 - w1), w0 * (1 - w1), (1 - w0) * w1, w0 * w1 };
+		var res = new float[4];
+		for (int ci = 0; ci < 4; ci++)
+		{
+			var _cc = UnfoldColor(cc[ci]);
+			for (int i = 0; i < 4; i++)
+				res[i] += _cc[i] * ww[ci];
+		}
+		var ures = new uint[4];
+		for (int i = 0; i < 4; i++)
+			ures[i] += (uint)XMath.Round(res[i]);
+		return FoldColor(ures);
 	}
 	public static uint GetBilinearPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
 	{
@@ -48,7 +63,9 @@ public static class CalcProc
 			source.GetPixelClamped(size, ind0 + new Index2D(0, 1)),
 			source.GetPixelClamped(size, ind0 + new Index2D(1, 0)),
 			source.GetPixelClamped(size, ind0 + new Index2D(1, 1)));
-		return MixColors(MixColors(c00, c01, diff.Y), MixColors(c10, c11, diff.Y), diff.X);
+		//return MixColors(MixColors(c00, c01, diff.Y), MixColors(c10, c11, diff.Y), diff.X);
+		//return MixColors(diff.Y<0.5?c00:c01, diff.Y < 0.5 ? c10 : c11, diff.X);
+		return MixColors4(c00, c01, c10, c11, diff.Y, diff.X);
 	}
 
 	static uint BSpline2MixColors(uint prev, uint cur, uint next, float t)
