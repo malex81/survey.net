@@ -4,12 +4,17 @@ using ILGPU.Algorithms;
 using ImageProcessing.Helpers;
 using System;
 using System.Linq;
+using System.Net;
 using System.Numerics;
+using System.Runtime.Intrinsics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ImageProcessing.RenderingMath;
 public static class CalcProc
 {
 	internal static Vector2 Round(this Vector2 v) => new(XMath.Round(v.X), XMath.Round(v.Y));
+	internal static Vector2 Floor(this Vector2 v) => new(XMath.Floor(v.X), XMath.Floor(v.Y));
+
 	static bool ContainsPoint(this PixelSize size, Vector2 pos) => pos.X >= 0 && pos.Y >= 0 && pos.X < size.Width && pos.Y < size.Height;
 
 	#region GetPixel variants
@@ -97,6 +102,32 @@ public static class CalcProc
 		return BSpline2MixColors(yy[0], yy[1], yy[2], diff.Y);
 	}
 
+	public static uint GetBSpline1_5Pixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
+	{
+		if (!size.ContainsPoint(pos)) return 0;
+		var v0 = new Vector2(pos.X + 0.25f, pos.Y + 0.25f);
+		var ind0 = v0.Floor().ToIndex();
+		var v2 = (2 * v0).Floor();
+		var ind2 = v2.ToIndex();
+		var diff = 2 * v0 - v2;
+
+		var yy = new uint[3];
+		for (int indY = 0; indY < 3; indY++)
+		{
+			uint[] cc = [
+				source.GetPixelClamped(size, ind0 + new Index2D(-1, indY - 1)),
+				source.GetPixelClamped(size, ind0 + new Index2D(0, indY - 1)),
+				source.GetPixelClamped(size, ind0 + new Index2D(1, indY - 1))
+			];
+			uint[] ccX = ind2.X == 2 * ind0.X ? [MixColors(cc[0], cc[1], 0.5f), cc[1], MixColors(cc[2], cc[1], 0.5f)]
+											: [cc[1], MixColors(cc[2], cc[1], 0.5f), cc[2]];
+			yy[indY] = BSpline2MixColors(ccX[0], ccX[1], ccX[2], diff.X);
+		}
+		uint[] ccY = ind2.Y == 2 * ind0.Y ? [MixColors(yy[0], yy[1], 0.5f), yy[1], MixColors(yy[2], yy[1], 0.5f)]
+										: [yy[1], MixColors(yy[2], yy[1], 0.5f), yy[2]];
+		return BSpline2MixColors(ccY[0], ccY[1], ccY[2], diff.Y);
+	}
+
 	static float GetMeanDerivative(float v1, float v2)
 	{
 		if (v1 * v2 <= 0) return 0;
@@ -104,7 +135,6 @@ public static class CalcProc
 		var v = (v1 + v2) / 2;
 		return XMath.Abs(v) > vMax ? XMath.Sign(v) * vMax : v;
 	}
-
 	static float CalcCubicValue(float ym1, float y0, float y1, float y2, float t)
 	{
 		var (_vm1, _v0, _v1) = (y0 - ym1, y1 - y0, y2 - y1);

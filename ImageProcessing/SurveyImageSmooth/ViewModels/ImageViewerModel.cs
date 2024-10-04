@@ -46,6 +46,7 @@ internal partial class ImageViewerModel : ObservableObject, IMouseDragModel
 		new("No smooth", SmoothType.None),
 		new("Bilinear", SmoothType.Bilinear),
 		new("Bicubic", SmoothType.Biсubic),
+		new("Half Square B-Spline", SmoothType.BSpline1_5),
 		new("Square B-Spline", SmoothType.BSpline2),
 		new("Gaussian blur", SmoothType.Blur),
 	];

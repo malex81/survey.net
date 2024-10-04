@@ -36,15 +36,11 @@ public partial class ChartModel : ObservableObject
 
 	static double GetMeanDerivative(double v1, double v2)
 	{
-		//var vm = v1 * v2;
-		//return vm > 0 ? Math.Sqrt(vm) * Math.Sign(v1) : 0;
-		//return vm > 0 ? (v1 > 0 ? Math.Min(v1, v2) : Math.Max(v1, v2)) : 0;
 		if (v1 * v2 <= 0) return 0;
 		var vMax = 3 * Math.Min(Math.Abs(v1), Math.Abs(v2));
 		var v = (v1 + v2) / 2;
 		return Math.Abs(v) > vMax ? Math.Sign(v) * vMax : v;
 	}
-
 	static (double[], double[]) CubicInterpolation(double[] data)
 	{
 		int count = (int)Math.Ceiling((data.Length - 1) / smoothStep);
@@ -98,15 +94,16 @@ public partial class ChartModel : ObservableObject
 
 	static (double[], double[]) BSpline2_1(double[] data)
 	{
-		int count = (int)Math.Ceiling(data.Length / smoothStep);
+		int count = (int)Math.Ceiling((data.Length - 1) / smoothStep);
 		var (xx, yy) = (new double[count], new double[count]);
 		for (int i = 0; i < count; i++)
 		{
 			var x = i * smoothStep;
-			xx[i] = x - 0.25;
-			var n = (int)Math.Floor(x);
-			var n2 = (int)Math.Floor(x * 2);
-			var t = x * 2 - n2;
+			xx[i] = x;
+			var x1 = x + 0.25;
+			var n = (int)Math.Floor(x1);
+			var n2 = (int)Math.Floor(x1 * 2);
+			var t = x1 * 2 - n2;
 			var (dn, dn1) = (data.GetClamped(n), data.GetClamped(n + 1));
 			var (d1, d2, d3) = n2 == 2 * n ? ((data.GetClamped(n - 1) + dn) / 2, dn, (dn1 + dn) / 2) : (dn, (dn1 + dn) / 2, dn1);
 			yy[i] = d1 * 0.5 * MathExt.Sqr(1 - t) + d2 * (0.5 + t * (1 - t)) + d3 * 0.5 * MathExt.Sqr(t);
