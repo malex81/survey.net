@@ -1,0 +1,14 @@
+<Project>
+	<PropertyGroup>
+	</PropertyGroup>
+
+	<Import Project=".\build\NUnit.Tests.targets" />
+
+	<ItemGroup>
+		<Compile Remove="output\**" />
+		<EmbeddedResource Remove="output\**" />
+		<None Remove="output\**" />
+		<None Remove="*.bat" />
+	</ItemGroup>
+	
+</Project>

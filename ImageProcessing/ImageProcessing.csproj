@@ -8,7 +8,7 @@
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
 	</PropertyGroup>
-	
+
 	<PropertyGroup>
 		<AvaloniaVersion>11.0.*</AvaloniaVersion>
 	</PropertyGroup>
@@ -40,10 +40,6 @@
 	<ItemGroup>
 		<!--<AvaloniaResource Include="Assets\**" />-->
 		<AvaloniaResource Include="**/*.xaml" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Remove="*.bat" />
 	</ItemGroup>
 
 	<Target Name="CopyConfig" AfterTargets="AfterBuild">
