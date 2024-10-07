@@ -8,7 +8,7 @@ using System.Text;
 namespace ScriptingSurvey;
 static class Test2
 {
-	public static async void Run()
+	public static async Task Run()
 	{
 		var samplesPath = PathHelper.FindDirectory("./##/scripts samples");
 		if (samplesPath == null)

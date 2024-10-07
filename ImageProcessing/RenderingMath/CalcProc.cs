@@ -46,17 +46,10 @@ public static class CalcProc
 	{
 		var cc = new uint[] { c00, c01, c10, c11 };
 		var ww = new float[] { (1 - w0) * (1 - w1), w0 * (1 - w1), (1 - w0) * w1, w0 * w1 };
-		var res = new float[4];
-		for (int ci = 0; ci < 4; ci++)
-		{
-			var _cc = UnfoldColor(cc[ci]);
-			for (int i = 0; i < 4; i++)
-				res[i] += _cc[i] * ww[ci];
-		}
-		var ures = new uint[4];
+		XColor res = new();
 		for (int i = 0; i < 4; i++)
-			ures[i] += (uint)XMath.Round(res[i]);
-		return FoldColor(ures);
+			res += ww[i] * XColor.FromUint(cc[i]);
+		return res;
 	}
 	public static uint GetBilinearPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
 	{
@@ -169,4 +162,13 @@ public static class CalcProc
 			res[ic] = (uint)XMath.Clamp(CalcCubicValue(yy[0, ic], yy[1, ic], yy[2, ic], yy[3, ic], diff.Y), 0, 255);
 		return FoldColor(res);
 	}
+
+	//static uint GetConvolutionPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos, float[,] matrix)
+	//{
+	//	if (!size.ContainsPoint(pos)) return 0;
+	//	var v1 = new Vector2(XMath.Floor(pos.X), XMath.Floor(pos.Y));
+	//	var ind0 = v1.ToIndex();
+	//	var (mWidth, mHeight) = (matrix.GetLength(0), matrix.GetLength(1));
+	//}
+	//public uint GetBluredPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos, int num) { }
 }

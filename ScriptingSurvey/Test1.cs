@@ -5,7 +5,7 @@ using System.Diagnostics;
 namespace ScriptingSurvey;
 static class Test1
 {
-	public static async void Run()
+	public static async Task Run()
 	{
 		var options = ScriptOptions.Default
 					.AddImports("System",

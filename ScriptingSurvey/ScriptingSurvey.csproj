@@ -8,11 +8,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="scripts samples\Test2.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Include="scripts samples\Test2.cs" />
+		<Compile Remove="scripts samples\**" />
+		<Content Include="scripts samples\**"/>
 	</ItemGroup>
 
 	<ItemGroup>
