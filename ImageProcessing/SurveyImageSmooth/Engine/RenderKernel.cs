@@ -57,6 +57,7 @@ public static class RenderKernel
 				SmoothType.BSpline2 => src.GetBSpline2Pixel(info.Size, v),
 				SmoothType.BSpline1_5 => src.GetBSpline1_5Pixel(info.Size, v),
 				SmoothType.Biсubic => src.GetBicubicPixel(info.Size, v),
+				SmoothType.Blur => src.GetAgePixel(info.Size, v),
 				_ => 0
 			};
 		});
