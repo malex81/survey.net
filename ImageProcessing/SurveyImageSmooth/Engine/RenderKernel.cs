@@ -46,6 +46,11 @@ public static class RenderKernel
 
 	public unsafe static RenderEntry DrawBitmapKernel(this Accelerator accelerator, Bitmap sourceBmp, Func<BitmapDrawParams> obtainParams)
 	{
+		var prefilterKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<uint>, ArrayView<uint>, ImageInfo>((ind, output, src, info) =>
+		{
+			output[ind] = src[ind] & 0xffaaffff;
+		});
+
 		var kernel = accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView<uint>, ImageInfo>((ind, output, src, info) =>
 		{
 			var tr = info.Transform;
@@ -57,7 +62,7 @@ public static class RenderKernel
 				SmoothType.BSpline2 => src.GetBSpline2Pixel(info.Size, v),
 				SmoothType.BSpline1_5 => src.GetBSpline1_5Pixel(info.Size, v),
 				SmoothType.Biсubic => src.GetBicubicPixel(info.Size, v),
-				SmoothType.Blur => src.GetAgePixel(info.Size, v),
+				SmoothType.Blur => src.GetEdgePixel(info.Size, v),
 				_ => 0
 			};
 		});
@@ -70,13 +75,16 @@ public static class RenderKernel
 			sourceBmp.CopyPixels(new PixelRect(srcSize), (IntPtr)p, buff.Length * 4, srcSize.Width * 4);
 		}
 		var imageBuffer = accelerator.Allocate1D(buff).DisposeWith(release);
+		var prefilteredBuffer = accelerator.Allocate1D<uint>(buff.Length).DisposeWith(release);
 
 		return new((ind, output) =>
 		{
 			var dp = obtainParams();
 			Matrix3x2.Invert(dp.Transform, out var tr);
-
-			kernel(ind, output, imageBuffer.View, new(srcSize, tr, dp.Smooth));
+			var imgInfo = new ImageInfo(srcSize, tr, dp.Smooth);
+			prefilterKernel(buff.Length, prefilteredBuffer.View, imageBuffer.View, imgInfo);
+			var _buff = false ? prefilteredBuffer : imageBuffer;
+			kernel(ind, output, _buff.View, imgInfo);
 			accelerator.Synchronize();
 		}, release.Dispose);
 	}

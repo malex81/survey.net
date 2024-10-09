@@ -180,7 +180,7 @@ public static class CalcProc
 			res = res with { A = source.GetColorClamped(size, ind0).A };
 		return res;
 	}
-	public static uint GetAgePixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
+	public static uint GetEdgePixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
 	{
 		//float[,] matrix = {{ 0, -1, 0},
 		//					{-1, 4, -1},
