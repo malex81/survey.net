@@ -21,51 +21,42 @@ public record RenderEntry(Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>> Ex
 	}
 }
 
-public enum SmoothType { None, Bilinear, BSpline2, BSpline1_5, Biсubic, Blur };
-public record struct BitmapDrawParams(Matrix3x2 Transform, SmoothType Smooth);
+public enum PrefilterType { None, FindEdges, GausianBlur };
+public enum InterpolationType { None, Bilinear, BSpline2, BSpline1_5, Biсubic };
+public record struct BitmapDrawParams(Matrix3x2 Transform, PrefilterType Prefilter, InterpolationType Interpolation);
 
 public static class RenderKernel
 {
-	public record struct ImageInfo(PixelSize Size, Matrix3x2 Transform, SmoothType Smooth);
-
-	public static RenderEntry SimpleTestKernel(this Accelerator accelerator)
-	{
-		var kernel = accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<uint, Stride2D.DenseX>>((ind, output) =>
-		{
-			var outSize = output.IntExtent;
-			var k1 = (1.0 * outSize.X) / outSize.Y;
-			var k2 = (1.0 * ind.X) / ind.Y;
-			output[ind] = k1 > k2 ? 0xffff0000 : 0xff00ff00;
-		});
-		return new((ind, output) =>
-		{
-			kernel(ind, output);
-			accelerator.Synchronize();
-		}, null);
-	}
+	public record struct ImageInfo(PixelSize Size, Matrix3x2 Transform, PrefilterType Prefilter, InterpolationType Interpolation);
 
 	public unsafe static RenderEntry DrawBitmapKernel(this Accelerator accelerator, Bitmap sourceBmp, Func<BitmapDrawParams> obtainParams)
 	{
 		var prefilterKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<uint>, ArrayView<uint>, ImageInfo>((ind, output, src, info) =>
 		{
-			output[ind] = src[ind] & 0xffaaffff;
+			var ind2 = ind.ToIndex2D(info.Size.Width);
+			output[ind] = info.Prefilter switch
+			{
+				PrefilterType.FindEdges => src.GetEdgePixel(info.Size, ind2),
+				//PrefilterType.GausianBlur => throw new NotImplementedException(),
+				_ => src[ind]
+			};
 		});
 
-		var kernel = accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView<uint>, ImageInfo>((ind, output, src, info) =>
+		var kernel = accelerator.LoadAutoGroupedStreamKernel((Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView<uint>, ImageInfo>)((ind, output, src, info) =>
 		{
 			var tr = info.Transform;
 			Vector2 v = Vector2.Transform(ind.ToVector(), tr);
-			output[ind] = info.Smooth switch
+			output[ind] = info.Interpolation switch
 			{
-				SmoothType.None => src.GetNearestPixel(info.Size, v),
-				SmoothType.Bilinear => src.GetBilinearPixel(info.Size, v),
-				SmoothType.BSpline2 => src.GetBSpline2Pixel(info.Size, v),
-				SmoothType.BSpline1_5 => src.GetBSpline1_5Pixel(info.Size, v),
-				SmoothType.Biсubic => src.GetBicubicPixel(info.Size, v),
-				SmoothType.Blur => src.GetEdgePixel(info.Size, v),
+				InterpolationType.None => src.GetNearestPixel(info.Size, v),
+				InterpolationType.Bilinear => src.GetBilinearPixel(info.Size, v),
+				InterpolationType.BSpline2 => src.GetBSpline2Pixel(info.Size, v),
+				InterpolationType.BSpline1_5 => src.GetBSpline1_5Pixel(info.Size, v),
+				InterpolationType.Biсubic => src.GetBicubicPixel(info.Size, v),
+				//InterpolationType.Blur => src.GetEdgePixel(info.Size, v),
 				_ => 0
 			};
-		});
+		}));
 		DisposableList release = [];
 
 		var srcSize = sourceBmp.PixelSize;
@@ -81,11 +72,33 @@ public static class RenderKernel
 		{
 			var dp = obtainParams();
 			Matrix3x2.Invert(dp.Transform, out var tr);
-			var imgInfo = new ImageInfo(srcSize, tr, dp.Smooth);
-			prefilterKernel(buff.Length, prefilteredBuffer.View, imageBuffer.View, imgInfo);
-			var _buff = false ? prefilteredBuffer : imageBuffer;
+			var imgInfo = new ImageInfo(srcSize, tr, dp.Prefilter, dp.Interpolation);
+			var _buff = imageBuffer;
+			if (imgInfo.Prefilter != PrefilterType.None)
+			{
+				prefilterKernel(buff.Length, prefilteredBuffer.View, imageBuffer.View, imgInfo);
+				_buff = prefilteredBuffer;
+			}
 			kernel(ind, output, _buff.View, imgInfo);
 			accelerator.Synchronize();
 		}, release.Dispose);
 	}
+
+	#region Experiments
+	public static RenderEntry SimpleTestKernel(this Accelerator accelerator)
+	{
+		var kernel = accelerator.LoadAutoGroupedStreamKernel<Index2D, ArrayView2D<uint, Stride2D.DenseX>>((ind, output) =>
+		{
+			var outSize = output.IntExtent;
+			var k1 = (1.0 * outSize.X) / outSize.Y;
+			var k2 = (1.0 * ind.X) / ind.Y;
+			output[ind] = k1 > k2 ? 0xffff0000 : 0xff00ff00;
+		});
+		return new((ind, output) =>
+		{
+			kernel(ind, output);
+			accelerator.Synchronize();
+		}, null);
+	}
+	#endregion
 }

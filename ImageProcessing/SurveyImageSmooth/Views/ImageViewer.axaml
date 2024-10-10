@@ -38,15 +38,20 @@
 					Padding="4 6"
 					HorizontalAlignment="Right"
 					VerticalAlignment="Top">
-				<StackPanel Width="200">
+				<StackPanel Width="300">
 					<TextBlock Text="{Binding #ImagePresenter.TimingText}"
 							   FontSize="10" Padding="4"/>
-					<Grid ColumnDefinitions="Auto,*" Margin="0,0,0,4">
-						<Label Margin="0,3,5,0">Smooth</Label>
+					<Grid ColumnDefinitions="Auto,*" RowDefinitions="*,*" Margin="0,0,0,4">
+						<Label Margin="0,3,5,0">Prefilter</Label>
 						<ComboBox Grid.Column="1" HorizontalAlignment="Stretch"
-							ItemsSource="{x:Static vm:ImageViewerModel.SmoothItems}"
+							ItemsSource="{x:Static vm:ImageViewerModel.PrefilterItems}"
 							DisplayMemberBinding="{Binding Name}"
-							SelectedItem="{Binding SmoothInfo}" />
+							SelectedItem="{Binding Prefilter}" />
+						<Label Margin="0,3,5,0" Grid.Row="1">Interpolation</Label>
+						<ComboBox Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch"
+							ItemsSource="{x:Static vm:ImageViewerModel.InterpolationItems}"
+							DisplayMemberBinding="{Binding Name}"
+							SelectedItem="{Binding Interpolation}" />
 					</Grid>
 					<Label Content="{Binding Zoom, StringFormat='Zoom: {0:g3}'}"/>
 					<Slider Value="{Binding ZoomRatio}"

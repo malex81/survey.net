@@ -21,7 +21,7 @@ using System.Reactive.Linq;
 namespace ImageProcessing.SurveyImageSmooth.ViewModels;
 
 record ImageItem(string Title, Bitmap ImageSource);
-record struct SmoothInfo(string Name, SmoothType Smooth);
+record struct SelectionItem<T>(string Name, T Value);
 
 internal partial class ImageViewerModel : ObservableObject, IMouseDragModel
 {
@@ -41,14 +41,17 @@ internal partial class ImageViewerModel : ObservableObject, IMouseDragModel
 				yield return new(Path.GetFileName(filePath), image);
 		}
 	}
-
-	public static SmoothInfo[] SmoothItems => [
-		new("No smooth", SmoothType.None),
-		new("Bilinear", SmoothType.Bilinear),
-		new("Bicubic", SmoothType.Biсubic),
-		new("Half Square B-Spline", SmoothType.BSpline1_5),
-		new("Square B-Spline", SmoothType.BSpline2),
-		new("Gaussian blur", SmoothType.Blur),
+	public static SelectionItem<PrefilterType>[] PrefilterItems => [
+		new("None", PrefilterType.None),
+		new("Find edges", PrefilterType.FindEdges),
+		new("Gaussian blur", PrefilterType.GausianBlur),
+	];
+	public static SelectionItem<InterpolationType>[] InterpolationItems => [
+		new("None", InterpolationType.None),
+		new("Bilinear", InterpolationType.Bilinear),
+		new("Bicubic", InterpolationType.Biсubic),
+		new("Half Square B-Spline", InterpolationType.BSpline1_5),
+		new("Square B-Spline", InterpolationType.BSpline2),
 	];
 	#endregion
 
@@ -67,14 +70,17 @@ internal partial class ImageViewerModel : ObservableObject, IMouseDragModel
 	private Rect viewBounds;
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(DrawParams))]
-	private SmoothInfo smoothInfo = SmoothItems[0];
+	private SelectionItem<PrefilterType> prefilter = PrefilterItems[0];
+	[ObservableProperty]
+	[NotifyPropertyChangedFor(nameof(DrawParams))]
+	private SelectionItem<InterpolationType> interpolation = InterpolationItems[0];
 	[ObservableProperty]
 	[NotifyPropertyChangedFor(nameof(DrawParams))]
 	private Vector2 imageShift = new();
 
 	public ImageItem[] Images { get; }
 	public float Zoom => MathF.Pow(2, ZoomRatio);
-	public BitmapDrawParams DrawParams => new(GetTransform(), SmoothInfo.Smooth);
+	public BitmapDrawParams DrawParams => new(GetTransform(), Prefilter.Value, Interpolation.Value);
 
 	ImageViewerModel(string relPath)
 	{

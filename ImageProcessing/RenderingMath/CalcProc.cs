@@ -165,22 +165,19 @@ public static class CalcProc
 		return FoldColor(res);
 	}
 
-	static uint GetConvolutionPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos, float[,] matrix, bool holdAlpha)
+	static uint GetConvolutionPixel(this ArrayView<uint> source, PixelSize size, Index2D ind, float[,] matrix, bool holdAlpha)
 	{
-		if (!size.ContainsPoint(pos)) return 0;
-		var v1 = new Vector2(XMath.Floor(pos.X), XMath.Floor(pos.Y));
-		var ind0 = v1.ToIndex();
 		var (mWidth, mHeight) = (matrix.GetLength(0), matrix.GetLength(1));
 		var (wShift, hShift) = (mWidth / 2, mHeight / 2);
 		XColor res = 0;
 		for (int xi = 0; xi < mWidth; xi++)
 			for (int yi = 0; yi < mHeight; yi++)
-				res += source.GetColorClamped(size, ind0 + new Index2D(xi - wShift, yi - hShift)) * matrix[xi, yi];
+				res += source.GetColorClamped(size, ind + new Index2D(xi - wShift, yi - hShift)) * matrix[xi, yi];
 		if (holdAlpha)
-			res = res with { A = source.GetColorClamped(size, ind0).A };
+			res = res with { A = source.GetColorClamped(size, ind).A };
 		return res;
 	}
-	public static uint GetEdgePixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
+	public static uint GetEdgePixel(this ArrayView<uint> source, PixelSize size, Index2D ind)
 	{
 		//float[,] matrix = {{ 0, -1, 0},
 		//					{-1, 4, -1},
@@ -188,7 +185,7 @@ public static class CalcProc
 		float[,] matrix = {{ -1, -1, -1},
 							{-1, 8, -1},
 							{-1, -1, -1}};
-		return source.GetConvolutionPixel(size, pos, matrix, true);
+		return source.GetConvolutionPixel(size, ind, matrix, true);
 	}
 	//public uint GetBluredPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos, int num) { }
 }
