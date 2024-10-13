@@ -31,15 +31,18 @@ public static class RenderKernel
 
 	public unsafe static RenderEntry DrawBitmapKernel(this Accelerator accelerator, Bitmap sourceBmp, Func<BitmapDrawParams> obtainParams)
 	{
-		var prefilterKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<uint>, ArrayView<uint>, ImageInfo>((ind, output, src, info) =>
+		var prefilterKernel = accelerator.LoadStreamKernel<ArrayView<uint>, ArrayView<uint>, ImageInfo>((output, src, info) =>
 		{
+			Index1D ind = Grid.GlobalIndex.X;
+			if (ind >= output.Length) return;
 			var ind2 = ind.ToIndex2D(info.Size.Width);
 			output[ind] = info.Prefilter switch
 			{
 				PrefilterType.FindEdges => src.GetEdgePixel(info.Size, ind2),
-				//PrefilterType.GausianBlur => throw new NotImplementedException(),
+				PrefilterType.GausianBlur => src.GetGaussianBlurPixel(info.Size, ind2, 1),
 				_ => src[ind]
 			};
+
 		});
 
 		var kernel = accelerator.LoadAutoGroupedStreamKernel((Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView<uint>, ImageInfo>)((ind, output, src, info) =>
@@ -53,7 +56,6 @@ public static class RenderKernel
 				InterpolationType.BSpline2 => src.GetBSpline2Pixel(info.Size, v),
 				InterpolationType.BSpline1_5 => src.GetBSpline1_5Pixel(info.Size, v),
 				InterpolationType.Biсubic => src.GetBicubicPixel(info.Size, v),
-				//InterpolationType.Blur => src.GetEdgePixel(info.Size, v),
 				_ => 0
 			};
 		}));
@@ -76,7 +78,10 @@ public static class RenderKernel
 			var _buff = imageBuffer;
 			if (imgInfo.Prefilter != PrefilterType.None)
 			{
-				prefilterKernel(buff.Length, prefilteredBuffer.View, imageBuffer.View, imgInfo);
+				var groupSize = 128;
+				KernelConfig dimension = ((buff.Length + groupSize - 1) / groupSize, groupSize);
+				prefilterKernel(dimension, prefilteredBuffer.View, imageBuffer.View, imgInfo);
+				//accelerator.Synchronize();
 				_buff = prefilteredBuffer;
 			}
 			kernel(ind, output, _buff.View, imgInfo);

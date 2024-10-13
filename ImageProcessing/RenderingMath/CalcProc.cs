@@ -2,12 +2,7 @@
 using ILGPU;
 using ILGPU.Algorithms;
 using ImageProcessing.Helpers;
-using System;
-using System.Linq;
-using System.Net;
 using System.Numerics;
-using System.Runtime.Intrinsics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ImageProcessing.RenderingMath;
 public static class CalcProc
@@ -16,6 +11,9 @@ public static class CalcProc
 	internal static Vector2 Floor(this Vector2 v) => new(XMath.Floor(v.X), XMath.Floor(v.Y));
 
 	static bool ContainsPoint(this PixelSize size, Vector2 pos) => pos.X >= 0 && pos.Y >= 0 && pos.X < size.Width && pos.Y < size.Height;
+
+	static uint[] UnfoldColor(uint c) => [(c & 0xff000000) >> 24, (c & 0x00ff0000) >> 16, (c & 0x0000ff00) >> 8, c & 0x000000ff];
+	static uint FoldColor(uint[] cc) => (cc[0] << 24) + (cc[1] << 16) + (cc[2] << 8) + cc[3];
 
 	#region GetPixel variants
 	static uint GetPixel(this ArrayView<uint> source, PixelSize size, int x, int y)
@@ -30,9 +28,7 @@ public static class CalcProc
 	public static XColor GetColorClamped(this ArrayView<uint> source, PixelSize size, Index2D ind) => source.GetPixelClamped(size, ind);
 	#endregion
 
-	static uint[] UnfoldColor(uint c) => [(c & 0xff000000) >> 24, (c & 0x00ff0000) >> 16, (c & 0x0000ff00) >> 8, c & 0x000000ff];
-	static uint FoldColor(uint[] cc) => (cc[0] << 24) + (cc[1] << 16) + (cc[2] << 8) + cc[3];
-
+	#region Interpolation
 	public static uint GetNearestPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos)
 		=> size.ContainsPoint(pos) ? source.GetPixelClamped(size, pos.Round().ToIndex()) : 0;
 
@@ -164,8 +160,10 @@ public static class CalcProc
 			res[ic] = (uint)XMath.Clamp(CalcCubicValue(yy[0, ic], yy[1, ic], yy[2, ic], yy[3, ic], diff.Y), 0, 255);
 		return FoldColor(res);
 	}
+	#endregion
 
-	static uint GetConvolutionPixel(this ArrayView<uint> source, PixelSize size, Index2D ind, float[,] matrix, bool holdAlpha)
+	#region Prefilters
+	public static uint GetConvolutionPixel(this ArrayView<uint> source, PixelSize size, Index2D ind, float[,] matrix, bool holdAlpha)
 	{
 		var (mWidth, mHeight) = (matrix.GetLength(0), matrix.GetLength(1));
 		var (wShift, hShift) = (mWidth / 2, mHeight / 2);
@@ -187,5 +185,32 @@ public static class CalcProc
 							{-1, -1, -1}};
 		return source.GetConvolutionPixel(size, ind, matrix, true);
 	}
-	//public uint GetBluredPixel(this ArrayView<uint> source, PixelSize size, Vector2 pos, int num) { }
+	// https://ru.wikipedia.org/wiki/%D0%A0%D0%B0%D0%B7%D0%BC%D1%8B%D1%82%D0%B8%D0%B5_%D0%BF%D0%BE_%D0%93%D0%B0%D1%83%D1%81%D1%81%D1%83
+	// https://github.com/m4rs-mt/ILGPU.Samples/blob/master/Src/SharedMemory/Program.cs - shared memory exampl
+	public static uint GetGaussianBlurPixel(this ArrayView<uint> source, PixelSize size, Index2D ind, float sigma)
+	{
+		var sharedArray = SharedMemory.Allocate2DDenseX<uint>(new(3, 3));
+		//sharedArray[new(1, 0)]++;
+		//sharedArray[new(1, 1)]++;
+		//sharedArray[new(1, 2)]++;
+
+		//if (sharedArray[new(1, 1)] == 0)
+		if (Group.IsFirstThread)
+		{
+			sharedArray[new(1, 0)] = 200;
+			sharedArray[new(1, 1)] = 150;
+			sharedArray[new(1, 2)] = 20;
+
+			sharedArray[new(0, 0)] = 0xff;
+		}
+		else
+		{
+			//if (sharedArray[new(0, 0)] < 0xff)
+			//	sharedArray[new(0, 0)]++;
+			//else sharedArray[new(0, 0)] = 100;
+		}
+		Group.Barrier();
+		return FoldColor([sharedArray[new(0, 0)], sharedArray[new(1, 0)], sharedArray[new(1, 1)], sharedArray[new(1, 2)]]);
+	}
+	#endregion
 }
