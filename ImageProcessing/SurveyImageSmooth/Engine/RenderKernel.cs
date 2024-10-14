@@ -31,15 +31,20 @@ public static class RenderKernel
 
 	public unsafe static RenderEntry DrawBitmapKernel(this Accelerator accelerator, Bitmap sourceBmp, Func<BitmapDrawParams> obtainParams)
 	{
-		var prefilterKernel = accelerator.LoadStreamKernel<ArrayView<uint>, ArrayView<uint>, ImageInfo>((output, src, info) =>
+		var prefilterKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<uint>, ArrayView<uint>, ArrayView2D<float, Stride2D.DenseX>, ImageInfo>((ind, output, src, convMatrix, info) =>
 		{
-			Index1D ind = Grid.GlobalIndex.X;
-			if (ind >= output.Length) return;
 			var ind2 = ind.ToIndex2D(info.Size.Width);
+			var mSize = convMatrix.IntExtent;
+			var matrix = new float[7, 7];
+			for (int i = 0; i < mSize.X; i++)
+				for (int j = 0; j < mSize.Y; j++)
+				{
+					matrix[i, j] = convMatrix[i, j];
+				}
 			output[ind] = info.Prefilter switch
 			{
 				PrefilterType.FindEdges => src.GetEdgePixel(info.Size, ind2),
-				PrefilterType.GausianBlur => src.GetGaussianBlurPixel(info.Size, ind2, 1),
+				PrefilterType.GausianBlur => src.GetConvolutionPixel(info.Size, ind2, matrix, true),
 				_ => src[ind]
 			};
 
@@ -78,9 +83,8 @@ public static class RenderKernel
 			var _buff = imageBuffer;
 			if (imgInfo.Prefilter != PrefilterType.None)
 			{
-				var groupSize = 128;
-				KernelConfig dimension = ((buff.Length + groupSize - 1) / groupSize, groupSize);
-				prefilterKernel(dimension, prefilteredBuffer.View, imageBuffer.View, imgInfo);
+				var convMatrix = accelerator.Allocate2DDenseX(CalcProc.ComputeGausianMatrix(1));
+				prefilterKernel(buff.Length, prefilteredBuffer.View, imageBuffer.View, convMatrix.View, imgInfo);
 				//accelerator.Synchronize();
 				_buff = prefilteredBuffer;
 			}

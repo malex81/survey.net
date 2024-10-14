@@ -2,6 +2,7 @@
 using ILGPU;
 using ILGPU.Algorithms;
 using ImageProcessing.Helpers;
+using SkiaSharp;
 using System.Numerics;
 
 namespace ImageProcessing.RenderingMath;
@@ -187,30 +188,53 @@ public static class CalcProc
 	}
 	// https://ru.wikipedia.org/wiki/%D0%A0%D0%B0%D0%B7%D0%BC%D1%8B%D1%82%D0%B8%D0%B5_%D0%BF%D0%BE_%D0%93%D0%B0%D1%83%D1%81%D1%81%D1%83
 	// https://github.com/m4rs-mt/ILGPU.Samples/blob/master/Src/SharedMemory/Program.cs - shared memory exampl
-	public static uint GetGaussianBlurPixel(this ArrayView<uint> source, PixelSize size, Index2D ind, float sigma)
+	public static float[,] ComputeGausianMatrix(float sigma)
 	{
-		var sharedArray = SharedMemory.Allocate2DDenseX<uint>(new(3, 3));
-		//sharedArray[new(1, 0)]++;
-		//sharedArray[new(1, 1)]++;
-		//sharedArray[new(1, 2)]++;
-
-		//if (sharedArray[new(1, 1)] == 0)
-		if (Group.IsFirstThread)
-		{
-			sharedArray[new(1, 0)] = 200;
-			sharedArray[new(1, 1)] = 150;
-			sharedArray[new(1, 2)] = 20;
-
-			sharedArray[new(0, 0)] = 0xff;
-		}
-		else
-		{
-			//if (sharedArray[new(0, 0)] < 0xff)
-			//	sharedArray[new(0, 0)]++;
-			//else sharedArray[new(0, 0)] = 100;
-		}
-		Group.Barrier();
-		return FoldColor([sharedArray[new(0, 0)], sharedArray[new(1, 0)], sharedArray[new(1, 1)], sharedArray[new(1, 2)]]);
+		byte num = (byte)XMath.Ceiling(3 * sigma);
+		var dim = num * 2 + 1;
+		var res = new float[dim, dim];
+		var sigma2 = MathExt.Sqr(sigma);
+		var a = 1 / (2 * XMath.PI * sigma2);
+		var b = -1 / (2 * sigma2);
+		res[num, num] = a;
+		for (int i = 1; i <= num; i++)
+			for (int j = 0; j <= i; j++)
+			{
+				var G = a * XMath.Exp(b * (i * i + j * j));
+				res[num + i, num + j] = G;
+				res[num - i, num - j] = G;
+				res[num - i, num + j] = G;
+				if (j != 0)
+					res[num + i, num - j] = G;
+				if (i != j)
+				{
+					res[num + j, num + i] = G;
+					res[num - j, num - i] = G;
+					res[num + j, num - i] = G;
+					if (j != 0)
+						res[num - j, num + i] = G;
+				}
+			}
+		return res;
 	}
+	/*	public static uint GetGaussianBlurPixel(this ArrayView<uint> source, PixelSize size, Index2D ind, float sigma)
+		{
+			//var sharedArray = SharedMemory.Allocate2DDenseX<uint>(new(3, 3));
+			if (Group.IsFirstThread)
+			{
+				var matrix = ComputeGausianMatrix(sigma);
+				var matrixBuff = SharedMemory.GetDynamic<float>();
+				*//*			sharedArray[new(1, 0)] = 200;
+							sharedArray[new(1, 1)] = 150;
+							sharedArray[new(1, 2)] = 20;
+							sharedArray[new(0, 0)] = 0xff;
+				*//*
+			}
+			Group.Barrier();
+			//return FoldColor([sharedArray[new(0, 0)], sharedArray[new(1, 0)], sharedArray[new(1, 1)], sharedArray[new(1, 2)]]);
+
+			return source.GetConvolutionPixel(size, ind, matrix, true);
+		}
+	*/
 	#endregion
 }

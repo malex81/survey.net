@@ -1,4 +1,5 @@
-﻿using Avalonia;
+﻿#if !TESTS
+using Avalonia;
 using ImageProcessing.Helpers;
 using System;
 using System.Threading.Tasks;
@@ -31,3 +32,4 @@ class Program
 			.WithInterFont()
 			.LogToTrace();
 }
+#endif
