@@ -205,28 +205,29 @@ public static class CalcProc
 	public static float[,] ComputeGaussianMatrix(float sigma)
 	{
 		byte num = (byte)XMath.Ceiling(3 * sigma);
-		var dim = num * 2 + 1;
+		var dim = num * 2 - 1;
+		var mid = num - 1;
 		var res = new float[dim, dim];
 		var sigma2 = MathExt.Sqr(sigma);
 		var a = 1 / (2 * XMath.PI * sigma2);
 		var b = -1 / (2 * sigma2);
-		res[num, num] = a;
-		for (int i = 1; i <= num; i++)
+		res[mid, mid] = a;
+		for (int i = 1; i <= mid; i++)
 			for (int j = 0; j <= i; j++)
 			{
 				var G = a * XMath.Exp(b * (i * i + j * j));
-				res[num + i, num + j] = G;
-				res[num - i, num - j] = G;
-				res[num - i, num + j] = G;
+				res[mid + i, mid + j] = G;
+				res[mid - i, mid - j] = G;
+				res[mid - i, mid + j] = G;
 				if (j != 0)
-					res[num + i, num - j] = G;
+					res[mid + i, mid - j] = G;
 				if (i != j)
 				{
-					res[num + j, num + i] = G;
-					res[num - j, num - i] = G;
-					res[num + j, num - i] = G;
+					res[mid + j, mid + i] = G;
+					res[mid - j, mid - i] = G;
+					res[mid + j, mid - i] = G;
 					if (j != 0)
-						res[num - j, num + i] = G;
+						res[mid - j, mid + i] = G;
 				}
 			}
 		return res;

@@ -80,8 +80,8 @@ public static class RenderKernel
 					PrefilterType.GaussianBlur => CalcProc.ComputeGaussianMatrix(3),
 					PrefilterType.AutoBlur => Call(() =>
 					{
-						var scale = dp.Transform.GetScale();
-						return scale < 0.6 ? CalcProc.ComputeGaussianMatrix(0.33f / scale) : new float[0, 0];
+						var sigma = 0.3f / dp.Transform.GetScale();
+						return sigma > 0.5f ? CalcProc.ComputeGaussianMatrix(sigma) : new float[0, 0];
 					}),
 					PrefilterType.FindEdges => new float[,]
 												{{-1, -1, -1},
