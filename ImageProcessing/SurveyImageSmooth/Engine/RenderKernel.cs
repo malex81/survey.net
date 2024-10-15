@@ -21,36 +21,26 @@ public record RenderEntry(Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>> Ex
 	}
 }
 
-public enum PrefilterType { None, FindEdges, GausianBlur };
+public enum PrefilterType { None, FindEdges, GaussianBlur, AutoBlur };
 public enum InterpolationType { None, Bilinear, BSpline2, BSpline1_5, Biсubic };
 public record struct BitmapDrawParams(Matrix3x2 Transform, PrefilterType Prefilter, InterpolationType Interpolation);
 
 public static class RenderKernel
 {
 	public record struct ImageInfo(PixelSize Size, Matrix3x2 Transform, PrefilterType Prefilter, InterpolationType Interpolation);
+	public record struct PrefilterConvolution(ArrayView2D<float, Stride2D.DenseX> Matrix, byte HoldAlpha);
 
 	public unsafe static RenderEntry DrawBitmapKernel(this Accelerator accelerator, Bitmap sourceBmp, Func<BitmapDrawParams> obtainParams)
 	{
-		var prefilterKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, ArrayView<uint>, ArrayView<uint>, ArrayView2D<float, Stride2D.DenseX>, ImageInfo>((ind, output, src, convMatrix, info) =>
+		var prefilterKernel = accelerator.LoadAutoGroupedStreamKernel((Action<Index1D, ArrayView<uint>, ArrayView<uint>, ImageInfo, PrefilterConvolution>)(
+			(ind, output, src, info, prefInfo) =>
 		{
 			var ind2 = ind.ToIndex2D(info.Size.Width);
-			var mSize = convMatrix.IntExtent;
-			var matrix = new float[7, 7];
-			for (int i = 0; i < mSize.X; i++)
-				for (int j = 0; j < mSize.Y; j++)
-				{
-					matrix[i, j] = convMatrix[i, j];
-				}
-			output[ind] = info.Prefilter switch
-			{
-				PrefilterType.FindEdges => src.GetEdgePixel(info.Size, ind2),
-				PrefilterType.GausianBlur => src.GetConvolutionPixel(info.Size, ind2, matrix, true),
-				_ => src[ind]
-			};
+			output[ind] = src.GetConvolutionPixel(info.Size, ind2, prefInfo.Matrix, prefInfo.HoldAlpha > 0);
+		}));
 
-		});
-
-		var kernel = accelerator.LoadAutoGroupedStreamKernel((Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView<uint>, ImageInfo>)((ind, output, src, info) =>
+		var kernel = accelerator.LoadAutoGroupedStreamKernel((Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView<uint>, ImageInfo>)(
+			(ind, output, src, info) =>
 		{
 			var tr = info.Transform;
 			Vector2 v = Vector2.Transform(ind.ToVector(), tr);
@@ -75,6 +65,8 @@ public static class RenderKernel
 		var imageBuffer = accelerator.Allocate1D(buff).DisposeWith(release);
 		var prefilteredBuffer = accelerator.Allocate1D<uint>(buff.Length).DisposeWith(release);
 
+		static TRes Call<TRes>(Func<TRes> f) => f();
+
 		return new((ind, output) =>
 		{
 			var dp = obtainParams();
@@ -83,10 +75,31 @@ public static class RenderKernel
 			var _buff = imageBuffer;
 			if (imgInfo.Prefilter != PrefilterType.None)
 			{
-				var convMatrix = accelerator.Allocate2DDenseX(CalcProc.ComputeGausianMatrix(1));
-				prefilterKernel(buff.Length, prefilteredBuffer.View, imageBuffer.View, convMatrix.View, imgInfo);
-				//accelerator.Synchronize();
-				_buff = prefilteredBuffer;
+				var convMatrix = imgInfo.Prefilter switch
+				{
+					PrefilterType.GaussianBlur => CalcProc.ComputeGaussianMatrix(3),
+					PrefilterType.AutoBlur => Call(() =>
+					{
+						var scale = dp.Transform.GetScale();
+						return scale < 0.6 ? CalcProc.ComputeGaussianMatrix(0.33f / scale) : new float[0, 0];
+					}),
+					PrefilterType.FindEdges => new float[,]
+												{{-1, -1, -1},
+												{ -1, 8, -1 },
+												{ -1, -1, -1}},
+					_ => new float[0, 0]
+				};
+				if (convMatrix.Length > 0)
+				{
+					var convMatrixBuff = accelerator.Allocate2DDenseX(convMatrix);
+					prefilterKernel(buff.Length,
+						prefilteredBuffer.View,
+						imageBuffer.View,
+						imgInfo,
+						new(convMatrixBuff.View, (byte)(imgInfo.Prefilter == PrefilterType.FindEdges ? 1 : 0)));
+					//accelerator.Synchronize();
+					_buff = prefilteredBuffer;
+				}
 			}
 			kernel(ind, output, _buff.View, imgInfo);
 			accelerator.Synchronize();

@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using ILGPU;
 using ILGPU.Algorithms;
+using ILGPU.Runtime;
 using ImageProcessing.Helpers;
 using SkiaSharp;
 using System.Numerics;
@@ -164,6 +165,19 @@ public static class CalcProc
 	#endregion
 
 	#region Prefilters
+	public static uint GetConvolutionPixel<TStride>(this ArrayView<uint> source, PixelSize size, Index2D ind, ArrayView2D<float, TStride> matrix, bool holdAlpha)
+		where TStride : struct, IStride2D
+	{
+		var dim = matrix.IntExtent;
+		var (wShift, hShift) = (dim.X / 2, dim.Y / 2);
+		XColor res = 0;
+		for (int xi = 0; xi < dim.X; xi++)
+			for (int yi = 0; yi < dim.Y; yi++)
+				res += source.GetColorClamped(size, ind + new Index2D(xi - wShift, yi - hShift)) * matrix[xi, yi];
+		if (holdAlpha)
+			res = res with { A = source.GetColorClamped(size, ind).A };
+		return res;
+	}
 	public static uint GetConvolutionPixel(this ArrayView<uint> source, PixelSize size, Index2D ind, float[,] matrix, bool holdAlpha)
 	{
 		var (mWidth, mHeight) = (matrix.GetLength(0), matrix.GetLength(1));
@@ -188,7 +202,7 @@ public static class CalcProc
 	}
 	// https://ru.wikipedia.org/wiki/%D0%A0%D0%B0%D0%B7%D0%BC%D1%8B%D1%82%D0%B8%D0%B5_%D0%BF%D0%BE_%D0%93%D0%B0%D1%83%D1%81%D1%81%D1%83
 	// https://github.com/m4rs-mt/ILGPU.Samples/blob/master/Src/SharedMemory/Program.cs - shared memory exampl
-	public static float[,] ComputeGausianMatrix(float sigma)
+	public static float[,] ComputeGaussianMatrix(float sigma)
 	{
 		byte num = (byte)XMath.Ceiling(3 * sigma);
 		var dim = num * 2 + 1;
@@ -217,24 +231,5 @@ public static class CalcProc
 			}
 		return res;
 	}
-	/*	public static uint GetGaussianBlurPixel(this ArrayView<uint> source, PixelSize size, Index2D ind, float sigma)
-		{
-			//var sharedArray = SharedMemory.Allocate2DDenseX<uint>(new(3, 3));
-			if (Group.IsFirstThread)
-			{
-				var matrix = ComputeGausianMatrix(sigma);
-				var matrixBuff = SharedMemory.GetDynamic<float>();
-				*//*			sharedArray[new(1, 0)] = 200;
-							sharedArray[new(1, 1)] = 150;
-							sharedArray[new(1, 2)] = 20;
-							sharedArray[new(0, 0)] = 0xff;
-				*//*
-			}
-			Group.Barrier();
-			//return FoldColor([sharedArray[new(0, 0)], sharedArray[new(1, 0)], sharedArray[new(1, 1)], sharedArray[new(1, 2)]]);
-
-			return source.GetConvolutionPixel(size, ind, matrix, true);
-		}
-	*/
 	#endregion
 }

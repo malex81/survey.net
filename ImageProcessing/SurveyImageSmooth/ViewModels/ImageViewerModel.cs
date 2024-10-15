@@ -44,7 +44,8 @@ internal partial class ImageViewerModel : ObservableObject, IMouseDragModel
 	public static SelectionItem<PrefilterType>[] PrefilterItems => [
 		new("None", PrefilterType.None),
 		new("Find edges", PrefilterType.FindEdges),
-		new("Gaussian blur", PrefilterType.GausianBlur),
+		new("Strong blur", PrefilterType.GaussianBlur),
+		new("Auto blur", PrefilterType.AutoBlur),
 	];
 	public static SelectionItem<InterpolationType>[] InterpolationItems => [
 		new("None", InterpolationType.None),
