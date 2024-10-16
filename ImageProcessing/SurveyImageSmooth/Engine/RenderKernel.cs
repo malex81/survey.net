@@ -67,6 +67,8 @@ public static class RenderKernel
 
 		static TRes Call<TRes>(Func<TRes> f) => f();
 
+		var largeBlurMatrix = CalcProc.ComputeGaussianMatrix(5);
+
 		return new((ind, output) =>
 		{
 			var dp = obtainParams();
@@ -77,7 +79,7 @@ public static class RenderKernel
 			{
 				var convMatrix = imgInfo.Prefilter switch
 				{
-					PrefilterType.GaussianBlur => CalcProc.ComputeGaussianMatrix(3),
+					PrefilterType.GaussianBlur => largeBlurMatrix,
 					PrefilterType.AutoBlur => Call(() =>
 					{
 						var sigma = 0.3f / dp.Transform.GetScale();
@@ -97,7 +99,7 @@ public static class RenderKernel
 						imageBuffer.View,
 						imgInfo,
 						new(convMatrixBuff.View, (byte)(imgInfo.Prefilter == PrefilterType.FindEdges ? 1 : 0)));
-					//accelerator.Synchronize();
+					accelerator.Synchronize();
 					_buff = prefilteredBuffer;
 				}
 			}

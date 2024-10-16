@@ -170,6 +170,22 @@ public static class CalcProc
 	{
 		var dim = matrix.IntExtent;
 		var (wShift, hShift) = (dim.X / 2, dim.Y / 2);
+		/*	float[] res = new float[4];
+			for (int xi = 0; xi < dim.X; xi++)
+				for (int yi = 0; yi < dim.Y; yi++)
+				{
+					var pix = source.GetPixelClamped(size, ind + new Index2D(xi - wShift, yi - hShift));
+					var cc = UnfoldColor(pix);
+					for (int ic = 0; ic < 4; ic++)
+					{
+						res[ic] += cc[ic] * matrix[xi, yi];
+					}
+				}
+			var ccRes = new uint[4];
+			for (int i = 0; i < 4; i++)
+				ccRes[i] = XMath.Clamp((uint)XMath.Round(res[i]), 0, 255);
+			return FoldColor(ccRes);
+		*/
 		XColor res = 0;
 		for (int xi = 0; xi < dim.X; xi++)
 			for (int yi = 0; yi < dim.Y; yi++)
@@ -177,6 +193,7 @@ public static class CalcProc
 		if (holdAlpha)
 			res = res with { A = source.GetColorClamped(size, ind).A };
 		return res;
+
 	}
 	public static uint GetConvolutionPixel(this ArrayView<uint> source, PixelSize size, Index2D ind, float[,] matrix, bool holdAlpha)
 	{

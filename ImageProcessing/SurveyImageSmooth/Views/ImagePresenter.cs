@@ -93,28 +93,38 @@ internal class ImagePresenter : Control
 	[MemberNotNullWhen(true, nameof(imageRendering))]
 	bool CanRender => imageRendering != null && Bounds.Width > 0 && Bounds.Height > 0;
 
+	private SKBitmap? imageSnapshot = null;
+
 	SKBitmap? RenderResultImage()
 	{
 		if (!CanRender) return null;
-		lock (imageRendering)
-		{
-			return imageRendering.RenderBitmap();
-		}
+		var sw = Stopwatch.StartNew();
+		var img = imageRendering.RenderBitmap();
+		sw.Stop();
+		rndMeanTime = rndMeanTime > 0 ? 0.98 * rndMeanTime + 0.02 * sw.Elapsed.TotalMilliseconds : sw.Elapsed.TotalMilliseconds;
+		InvalidateTimingText();
+		return img;
 	}
 
 	void SkiaDraw(SKCanvas canvas)
 	{
-		var sw = Stopwatch.StartNew();
-		using var img = RenderResultImage();
-		sw.Stop();
-		rndMeanTime = rndMeanTime > 0 ? 0.98 * rndMeanTime + 0.02 * sw.Elapsed.TotalMilliseconds : sw.Elapsed.TotalMilliseconds;
-		InvalidateTimingText();
-		if (img != null)
-			canvas.DrawBitmap(img, Bounds.ToSKRect());
+		if (!CanRender) return;
+		lock (imageRendering)
+		{
+			imageSnapshot ??= RenderResultImage();
+			if (imageSnapshot != null)
+				canvas.DrawBitmap(imageSnapshot, Bounds.ToSKRect());
+		}
 	}
 
 	public override void Render(DrawingContext context)
 	{
+		if (!CanRender) return;
+		lock (imageRendering)
+		{
+			imageSnapshot?.Dispose();
+			imageSnapshot = null;
+		}
 		context.Custom(skDrawer);
 		//Dispatcher.UIThread.Post(InvalidateVisual);
 	}
