@@ -101,7 +101,7 @@ internal class ImagePresenter : Control
 		var sw = Stopwatch.StartNew();
 		var img = imageRendering.RenderBitmap();
 		sw.Stop();
-		rndMeanTime = rndMeanTime > 0 ? 0.98 * rndMeanTime + 0.02 * sw.Elapsed.TotalMilliseconds : sw.Elapsed.TotalMilliseconds;
+		rndMeanTime = rndMeanTime > 0 ? 0.9 * rndMeanTime + 0.1 * sw.Elapsed.TotalMilliseconds : sw.Elapsed.TotalMilliseconds;
 		InvalidateTimingText();
 		return img;
 	}

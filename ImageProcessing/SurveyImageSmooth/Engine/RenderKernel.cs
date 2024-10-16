@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Avalonia.Controls.Shapes;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using ILGPU;
@@ -8,7 +9,9 @@ using ILGPU.Runtime;
 using ImageProcessing.Helpers;
 using ImageProcessing.RenderingMath;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
+using static ILGPU.IR.Analyses.Uniforms;
 
 namespace ImageProcessing.SurveyImageSmooth.Engine;
 
@@ -27,33 +30,42 @@ public record struct BitmapDrawParams(Matrix3x2 Transform, PrefilterType Prefilt
 
 public static class RenderKernel
 {
-	public record struct ImageInfo(PixelSize Size, Matrix3x2 Transform, PrefilterType Prefilter, InterpolationType Interpolation);
-	public record struct PrefilterConvolution(ArrayView2D<float, Stride2D.DenseX> Matrix, byte HoldAlpha);
+	public record struct ImageSource(ArrayView<uint> Data, PixelSize Size);
+	public record struct ImageInfo(
+		ImageSource Source,
+		ArrayView2D<uint, Stride2D.DenseX> Otput,
+		Matrix3x2 Transform,
+		InterpolationType Interpolation);
+	public record struct PrefilterConvolution(
+		ImageSource Source,
+		ArrayView<uint> Otput,
+		ArrayView2D<float, Stride2D.DenseX> Matrix,
+		byte HoldAlpha);
 
+	static void PrefilterKernel(Index1D ind, PrefilterConvolution prm)
+	{
+		var ind2 = ind.ToIndex2D(prm.Source.Size.Width);
+		prm.Otput[ind] = prm.Source.Data.GetConvolutionPixel(prm.Source.Size, ind2, prm.Matrix, prm.HoldAlpha > 0);
+	}
+	static void InterpolationKernel(Index2D ind, ImageInfo img)
+	{
+		var tr = img.Transform;
+		Vector2 v = Vector2.Transform(ind.ToVector(), tr);
+		img.Otput[ind] = img.Interpolation switch
+		{
+			InterpolationType.None => img.Source.Data.GetNearestPixel(img.Source.Size, v),
+			InterpolationType.Bilinear => img.Source.Data.GetBilinearPixel(img.Source.Size, v),
+			InterpolationType.BSpline2 => img.Source.Data.GetBSpline2Pixel(img.Source.Size, v),
+			InterpolationType.BSpline1_5 => img.Source.Data.GetBSpline1_5Pixel(img.Source.Size, v),
+			InterpolationType.Biсubic => img.Source.Data.GetBicubicPixel(img.Source.Size, v),
+			_ => 0
+		};
+	}
 	public unsafe static RenderEntry DrawBitmapKernel(this Accelerator accelerator, Bitmap sourceBmp, Func<BitmapDrawParams> obtainParams)
 	{
-		var prefilterKernel = accelerator.LoadAutoGroupedStreamKernel((Action<Index1D, ArrayView<uint>, ArrayView<uint>, ImageInfo, PrefilterConvolution>)(
-			(ind, output, src, info, prefInfo) =>
-		{
-			var ind2 = ind.ToIndex2D(info.Size.Width);
-			output[ind] = src.GetConvolutionPixel(info.Size, ind2, prefInfo.Matrix, prefInfo.HoldAlpha > 0);
-		}));
+		var prefilterKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, PrefilterConvolution>(PrefilterKernel);
+		var interKernel = accelerator.LoadAutoGroupedStreamKernel<Index2D, ImageInfo>(InterpolationKernel);
 
-		var kernel = accelerator.LoadAutoGroupedStreamKernel((Action<Index2D, ArrayView2D<uint, Stride2D.DenseX>, ArrayView<uint>, ImageInfo>)(
-			(ind, output, src, info) =>
-		{
-			var tr = info.Transform;
-			Vector2 v = Vector2.Transform(ind.ToVector(), tr);
-			output[ind] = info.Interpolation switch
-			{
-				InterpolationType.None => src.GetNearestPixel(info.Size, v),
-				InterpolationType.Bilinear => src.GetBilinearPixel(info.Size, v),
-				InterpolationType.BSpline2 => src.GetBSpline2Pixel(info.Size, v),
-				InterpolationType.BSpline1_5 => src.GetBSpline1_5Pixel(info.Size, v),
-				InterpolationType.Biсubic => src.GetBicubicPixel(info.Size, v),
-				_ => 0
-			};
-		}));
 		DisposableList release = [];
 
 		var srcSize = sourceBmp.PixelSize;
@@ -65,45 +77,63 @@ public static class RenderKernel
 		var imageBuffer = accelerator.Allocate1D(buff).DisposeWith(release);
 		var prefilteredBuffer = accelerator.Allocate1D<uint>(buff.Length).DisposeWith(release);
 
-		static TRes Call<TRes>(Func<TRes> f) => f();
+		//static TRes Call<TRes>(Func<TRes> f) => f();
 
-		var largeBlurMatrix = CalcProc.ComputeGaussianMatrix(5);
+		const float sigmaTl = 1.2f;
+		float lastSigma = 0;
+		bool NeedBlurUpdate(float sigma, out float[,] matrix)
+		{
+			var res = lastSigma == 0 || sigma != 0 && (sigma / lastSigma > sigmaTl || lastSigma / sigma > sigmaTl);
+			matrix = res ? CalcProc.ComputeGaussianMatrix(sigma) : new float[0, 0];
+			if (res)
+				lastSigma = sigma;
+			return res;
+		}
 
 		return new((ind, output) =>
 		{
 			var dp = obtainParams();
 			Matrix3x2.Invert(dp.Transform, out var tr);
-			var imgInfo = new ImageInfo(srcSize, tr, dp.Prefilter, dp.Interpolation);
-			var _buff = imageBuffer;
-			if (imgInfo.Prefilter != PrefilterType.None)
+			var imgSource = new ImageSource(imageBuffer.View, srcSize);
+			if (dp.Prefilter != PrefilterType.None)
 			{
-				var convMatrix = imgInfo.Prefilter switch
+				var gSigma = dp.Prefilter switch
 				{
-					PrefilterType.GaussianBlur => largeBlurMatrix,
-					PrefilterType.AutoBlur => Call(() =>
-					{
-						var sigma = 0.3f / dp.Transform.GetScale();
-						return sigma > 0.5f ? CalcProc.ComputeGaussianMatrix(sigma) : new float[0, 0];
-					}),
-					PrefilterType.FindEdges => new float[,]
-												{{-1, -1, -1},
-												{ -1, 8, -1 },
-												{ -1, -1, -1}},
-					_ => new float[0, 0]
+					PrefilterType.AutoBlur => 0.3f / dp.Transform.GetScale(),
+					PrefilterType.GaussianBlur => 6,
+					_ => 0
 				};
+				float[,] convMatrix;
+				if (gSigma == 0)
+				{
+					lastSigma = gSigma;
+					convMatrix = dp.Prefilter switch
+					{
+						PrefilterType.FindEdges => new float[,]
+													{{ -1, -1, -1 },
+													{ -1, 8, -1 },
+													{ -1, -1, -1 }},
+						_ => new float[0, 0]
+					};
+				}
+				else
+				{
+					if (gSigma < 0.5f) convMatrix = new float[0, 0];
+					else if (!NeedBlurUpdate(gSigma, out convMatrix))
+						imgSource.Data = prefilteredBuffer.View;
+				}
 				if (convMatrix.Length > 0)
 				{
 					var convMatrixBuff = accelerator.Allocate2DDenseX(convMatrix);
-					prefilterKernel(buff.Length,
-						prefilteredBuffer.View,
-						imageBuffer.View,
-						imgInfo,
-						new(convMatrixBuff.View, (byte)(imgInfo.Prefilter == PrefilterType.FindEdges ? 1 : 0)));
+					prefilterKernel(buff.Length, new(imgSource,
+													prefilteredBuffer.View,
+													convMatrixBuff.View,
+													(byte)(dp.Prefilter == PrefilterType.FindEdges ? 1 : 0)));
 					accelerator.Synchronize();
-					_buff = prefilteredBuffer;
+					imgSource.Data = prefilteredBuffer.View;
 				}
 			}
-			kernel(ind, output, _buff.View, imgInfo);
+			interKernel(ind, new(imgSource, output, tr, dp.Interpolation));
 			accelerator.Synchronize();
 		}, release.Dispose);
 	}
