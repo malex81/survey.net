@@ -63,7 +63,7 @@ public static class RenderKernel
 	}
 	public unsafe static RenderEntry DrawBitmapKernel(this Accelerator accelerator, Bitmap sourceBmp, Func<BitmapDrawParams> obtainParams)
 	{
-		var prefilterKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, PrefilterConvolution>(PrefilterKernel);
+		var prefKernel = accelerator.LoadAutoGroupedStreamKernel<Index1D, PrefilterConvolution>(PrefilterKernel);
 		var interKernel = accelerator.LoadAutoGroupedStreamKernel<Index2D, ImageInfo>(InterpolationKernel);
 
 		DisposableList release = [];
@@ -125,11 +125,11 @@ public static class RenderKernel
 				if (convMatrix.Length > 0)
 				{
 					var convMatrixBuff = accelerator.Allocate2DDenseX(convMatrix);
-					prefilterKernel(buff.Length, new(imgSource,
+					prefKernel(buff.Length, new(imgSource,
 													prefilteredBuffer.View,
 													convMatrixBuff.View,
 													(byte)(dp.Prefilter == PrefilterType.FindEdges ? 1 : 0)));
-					accelerator.Synchronize();
+					//accelerator.Synchronize();
 					imgSource.Data = prefilteredBuffer.View;
 				}
 			}
