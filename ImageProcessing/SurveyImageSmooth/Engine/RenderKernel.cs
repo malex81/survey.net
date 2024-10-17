@@ -79,7 +79,7 @@ public static class RenderKernel
 
 		//static TRes Call<TRes>(Func<TRes> f) => f();
 
-		const float sigmaTl = 1.2f;
+		const float sigmaTl = 1.1f;
 		float lastSigma = 0;
 		bool NeedBlurUpdate(float sigma, out float[,] matrix)
 		{
