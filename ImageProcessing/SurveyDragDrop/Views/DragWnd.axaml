@@ -6,6 +6,7 @@
         x:Class="ImageProcessing.SurveyDragDrop.Views.DragWnd"
 		SystemDecorations="None"
         Background="Transparent"
+		Topmost="true"
         Title="DragWnd">
 	<Border BorderBrush="Red" BorderThickness="3" CornerRadius="10" Background="#a4fb">
 		<TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="40">😁</TextBlock>

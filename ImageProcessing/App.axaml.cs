@@ -27,6 +27,7 @@ public partial class App : Application
 	{
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
 		{
+			desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
 			desktop.Exit += AppExit;
 			desktop.MainWindow = BuildMainWindow();
 		}

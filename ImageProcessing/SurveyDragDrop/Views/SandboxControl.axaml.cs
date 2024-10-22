@@ -2,10 +2,11 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
+using System;
 
 namespace ImageProcessing.SurveyDragDrop.Views;
 
-public partial class SandboxControl : UserControl
+public partial class SandboxControl : UserControl, IDisposable
 {
 	private DragWnd? dragWnd;
 
@@ -27,18 +28,25 @@ public partial class SandboxControl : UserControl
 			dragWnd.Show();
 		}
 	}
+	void CloseDragWnd()
+	{
+		dragWnd?.Close();
+		dragWnd = null;
+	}
 
 	protected override void OnPointerPressed(PointerPressedEventArgs e)
 	{
-		dragWnd = new();
-		dragWnd.Show();
+		if (dragWnd == null)
+		{
+			dragWnd = new();
+			dragWnd.Show();
+		}
 		base.OnPointerPressed(e);
 	}
 
 	protected override void OnPointerReleased(PointerReleasedEventArgs e)
 	{
-		dragWnd?.Close();
-		dragWnd = null;
+		//CloseDragWnd();
 		base.OnPointerReleased(e);
 	}
 
@@ -46,9 +54,19 @@ public partial class SandboxControl : UserControl
 	{
 		if (dragWnd != null)
 		{
+			if (e.Pointer.Captured == null)
+			{
+				e.Pointer.Capture(this);
+			}
 			var pos = this.PointToScreen(e.GetPosition(this));
 			dragWnd.Position = pos - new PixelPoint(40, 40);
 		}
 		base.OnPointerMoved(e);
+	}
+
+	public void Dispose()
+	{
+		CloseDragWnd();
+		GC.SuppressFinalize(this);
 	}
 }

@@ -1,11 +1,17 @@
 ﻿using Avalonia.Controls;
 using ImageProcessing.Base;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace ImageProcessing.SurveyDragDrop;
 
-internal class ComponentRegistry : ISurveyComponent
+internal class ComponentRegistry : ISurveyComponent, IDisposable
 {
+	public static void RegisterServices(IServiceCollection services)
+	{
+		services.AddSingleton<ISurveyComponent, ComponentRegistry>();
+	}
+
 	private Views.SandboxControl? mainControl;
 
 	public string Code => "DragDrop";
@@ -13,8 +19,8 @@ internal class ComponentRegistry : ISurveyComponent
 
 	public Control View => mainControl ??= new();
 
-	public static void RegisterServices(IServiceCollection services)
+	public void Dispose()
 	{
-		services.AddSingleton<ISurveyComponent, ComponentRegistry>();
+		(mainControl as IDisposable)?.Dispose();
 	}
 }
