@@ -28,7 +28,9 @@ static class Test1
 	{
 		var html = @"Привет, Вася!
 <br>Как <small>твоя жалкая жизнь</small>?
-Не хочешь <custom-widget fuck-off='ушел в себя' fuck-in='Вернусь не скоро'/> повеситься?";
+Не хочешь <custom-widget fuck-off='ушел в себя' fuck-in='Вернусь не скоро'/> повеситься?
+<p>А тут будет параграф
+<p>И еще один";
 		var htmlDoc = new HtmlDocument();
 		htmlDoc.LoadHtml(html);
 
