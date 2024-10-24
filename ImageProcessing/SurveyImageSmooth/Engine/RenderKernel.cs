@@ -1,17 +1,12 @@
 ﻿using Avalonia;
-using Avalonia.Controls.Shapes;
-using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using ILGPU;
 using ILGPU.Algorithms;
-using ILGPU.Algorithms.Optimization.Optimizers;
 using ILGPU.Runtime;
 using ImageProcessing.Helpers;
 using ImageProcessing.RenderingMath;
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
-using static ILGPU.IR.Analyses.Uniforms;
 
 namespace ImageProcessing.SurveyImageSmooth.Engine;
 

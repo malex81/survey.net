@@ -7,7 +7,7 @@
 		SystemDecorations="None"
         Background="Transparent"
 		Topmost="true"
-        Title="DragWnd">
+        Title="DragWnd" IsHitTestVisible="False">
 	<Border BorderBrush="Red" BorderThickness="3" CornerRadius="10" Background="#a4fb">
 		<TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="40">😁</TextBlock>
 	</Border>
