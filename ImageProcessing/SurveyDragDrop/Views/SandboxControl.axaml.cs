@@ -26,7 +26,7 @@ public partial class SandboxControl : UserControl, IDisposable
 	void UpdateDragWndPosition(PixelPoint pos)
 	{
 		if (dragWnd != null)
-			dragWnd.Position = pos - new PixelPoint(50, 120);
+			dragWnd.Position = pos - new PixelPoint(50, 20);
 	}
 
 	void ToggleDragWnd()
@@ -60,7 +60,7 @@ public partial class SandboxControl : UserControl, IDisposable
 			DragDrop.SetAllowDrop(dragWnd, true);
 			void onDragOverPreview(object? sender, DragEventArgs e)
 			{
-				RaiseEvent(e);
+				//RaiseEvent(e);
 				//var pos = dragWnd.PointToScreen(e.GetPosition(dragWnd));
 				//UpdateDragWndPosition(pos);
 			}
