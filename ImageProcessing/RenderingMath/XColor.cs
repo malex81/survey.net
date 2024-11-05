@@ -13,7 +13,7 @@ public readonly record struct XColor(float A, float R, float G, float B)
 		return new(a, r, g, b);
 	}
 
-	readonly float[] Components => [A, R, G, B];
+	public readonly float[] Components => [A, R, G, B];
 
 	public readonly uint ToUint()
 	{

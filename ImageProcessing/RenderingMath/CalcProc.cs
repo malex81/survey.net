@@ -3,7 +3,9 @@ using ILGPU;
 using ILGPU.Algorithms;
 using ILGPU.Runtime;
 using ImageProcessing.Helpers;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using SkiaSharp;
+using System;
 using System.Numerics;
 
 namespace ImageProcessing.RenderingMath;
@@ -162,6 +164,59 @@ public static class CalcProc
 			res[ic] = (uint)XMath.Clamp(CalcCubicValue(yy[0, ic], yy[1, ic], yy[2, ic], yy[3, ic], diff.Y), 0, 255);
 		return FoldColor(res);
 	}
+
+	/*
+	public static T GetAbstractPixelClamped<T>(this ArrayView<T> source, PixelSize size, Index2D ind) where T : unmanaged, INumber<T>
+			=> source[XMath.Clamp(ind.X, 0, size.Width - 1) + XMath.Clamp(ind.Y, 0, size.Height - 1) * size.Width];
+
+	static XColor GetMeanDerivative(XColor c1, XColor c2)
+	{
+		float[] res = new float[4];
+		for (int i = 0; i < 4; i++)
+		{
+			var (v1, v2) = (c1.Components[i], c2.Components[i]);
+			if (v1 * v2 <= 0) return 0;
+			var vMax = 3 * XMath.Min(XMath.Abs(v1), XMath.Abs(v2));
+			var v = (v1 + v2) / 2;
+			res[i] = XMath.Abs(v) > vMax ? XMath.Sign(v) * vMax : v;
+		}
+		return new(res[0], res[1], res[2], res[3]);
+	}
+
+	static XColor CalcCubicValue(XColor ym1, XColor y0, XColor y1, XColor y2, float t)
+	{
+		var (_vm1, _v0, _v1) = (y0 - ym1, y1 - y0, y2 - y1);
+		var (v0, v1) = (GetMeanDerivative(_vm1, _v0), GetMeanDerivative(_v1, _v0));
+		var a = v0 + v1 - 2f * (y1 - y0);
+		var b = 3f * (y1 - y0) - 2f * v0 - v1;
+		return a * MathExt.Cube(t) + b * MathExt.Sqr(t) + v0 * t + y0;
+	}
+
+	public static T GetBicubicPixel<T>(this ArrayView<T> source, PixelSize size, Vector2 pos) where T : unmanaged, INumber<T>
+	{
+		if (!size.ContainsPoint(pos)) return T.CreateChecked(0);
+
+		var v1 = new Vector2(XMath.Floor(pos.X), XMath.Floor(pos.Y));
+		var ind0 = v1.ToIndex();
+		var diff = pos - v1;
+
+		var yy = new XColor[4];
+		for (int iy = 0; iy < 4; iy++)
+		{
+			var xx = new XColor[4];
+			for (int ix = 0; ix < 4; ix++)
+			{
+				var cc = source.GetAbstractPixelClamped(size, ind0 + new Index2D(ix - 1, iy - 1));
+				xx[ix] = uint.CreateChecked(cc);
+				//if (cc is uint) xx[ix] = uint.CreateChecked(cc);
+				//else if (cc is float cf) xx[ix] = new(0, 0, 0, cf);
+			}
+			yy[iy] = CalcCubicValue(xx[0], xx[1], xx[2], xx[3], diff.X);
+		}
+		var res = CalcCubicValue(yy[0], yy[1], yy[2], yy[3], diff.Y);
+		return res.A == 0 ? T.CreateChecked(res.B) : T.CreateChecked(res.ToUint());
+	}
+	*/
 	#endregion
 
 	#region Prefilters
