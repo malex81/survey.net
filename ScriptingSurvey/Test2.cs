@@ -6,8 +6,15 @@ using System.IO.Compression;
 using System.Text;
 
 namespace ScriptingSurvey;
+
+public class Test2InputParams
+{
+	public TestDataProvider2 DataProvider = new();
+}
+
 static class Test2
 {
+
 	public static async Task Run()
 	{
 		var samplesPath = PathHelper.FindDirectory("./##/scripts samples");
@@ -16,7 +23,7 @@ static class Test2
 			Console.WriteLine("Directory 'scripts samples' not found");
 			return;
 		}
-		var fileName = Path.Combine(samplesPath, "Test2.cs");
+		var fileName = Path.Combine(samplesPath, "Test2.csx");
 		if (!File.Exists(fileName))
 		{
 			Console.WriteLine($"File '{fileName}' not exists");
@@ -38,11 +45,12 @@ static class Test2
 
 		var sw = Stopwatch.StartNew();
 
-		var script = CSharpScript.Create<TestBase>(scriptCode, options);
+		var script = CSharpScript.Create(scriptCode, options, typeof(Test2InputParams));
 		script.Compile();
 		Console.WriteLine(@"Compile time: {0}ms", sw.ElapsedMilliseconds);
 		sw.Restart();
-		var state = await script.RunAsync();
+		var interimState = await script.RunAsync(new Test2InputParams());
+		var state = await interimState.ContinueWithAsync<TestBase>("new Main(DataProvider)");
 		var testScript = state.ReturnValue;
 		Console.WriteLine(@"Execution time: {0}ms", sw.ElapsedMilliseconds);
 
