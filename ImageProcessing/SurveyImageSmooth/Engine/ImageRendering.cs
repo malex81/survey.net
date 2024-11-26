@@ -17,7 +17,8 @@ internal class ImageRendering(Control control)
 	private static readonly Context gpuContext;
 	private static readonly Device gpuDevice;
 
-	static readonly AcceleratorType[] accPriority = [AcceleratorType.Cuda, AcceleratorType.OpenCL, AcceleratorType.CPU];
+	//static readonly AcceleratorType[] accPriority = [AcceleratorType.Cuda, AcceleratorType.OpenCL, AcceleratorType.CPU];
+	static readonly AcceleratorType[] accPriority = [AcceleratorType.OpenCL, AcceleratorType.Cuda, AcceleratorType.CPU];
 
 	static Device ChooseBestDevice(Context context) => context.Devices
 			.OrderBy(d => Array.IndexOf(accPriority, d.AcceleratorType))

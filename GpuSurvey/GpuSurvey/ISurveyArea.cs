@@ -1,14 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace GpuSurvey;
 
-namespace DeviceSurvey
+internal interface ISurveyArea
 {
-	internal interface ISurveyArea
-	{
-		string Name { get; }
-		void Survey();
-	}
+	string Name { get; }
+	void Survey();
 }
