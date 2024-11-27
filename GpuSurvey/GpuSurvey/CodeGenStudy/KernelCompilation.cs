@@ -22,7 +22,10 @@ internal class KernelCompilation : ISurveyArea
 
 	public void Survey()
 	{
-		using var context = Context.CreateDefault();
+		using var context = Context.Create(builder => builder
+					.Default()
+					.EnableAlgorithms()
+					.Inlining(InliningMode.Aggressive));
 		var device = context.Devices.FirstOrDefault(d => d.AcceleratorType == AcceleratorType.OpenCL);
 		if (device == null)
 		{
@@ -31,7 +34,8 @@ internal class KernelCompilation : ISurveyArea
 		}
 		using var accelerator = device.CreateAccelerator(context);
 
-		ResearchSubject1(accelerator);
+		//ResearchSubject1(accelerator);
+		ResearchMixColors(accelerator);
 	}
 
 	#region Subject #1
@@ -62,6 +66,26 @@ internal class KernelCompilation : ISurveyArea
 	}
 	#endregion
 
+	#region Survey MixColors
+	static void MixColorsKernel(Index1D index, ArrayView<uint> dataView, uint c1, uint c2)
+	{
+		dataView[index] = CalcProc.MixColors(c1, c2, 0.5f);
+	}
+	static void ResearchMixColors(Accelerator accelerator)
+	{
+		var compiledKernel = CompileAutoGroupedKernel(accelerator, nameof(MixColorsKernel));
+
+		using var kernel = accelerator.LoadAutoGroupedKernel(compiledKernel);
+		var launcher = kernel.CreateLauncherDelegate<Action<AcceleratorStream, Index1D, ArrayView<uint>, uint, uint>>();
+		// -------------------------------------------------------------------------------
+
+		using var buffer = accelerator.Allocate1D<uint>(1024);
+		launcher(accelerator.DefaultStream, (Index1D)buffer.Length, buffer.View, 0xaabbcc, 0xff1122);
+
+		var data = buffer.GetAsArray1D();
+		Console.WriteLine("Some first elements: {0}", string.Join(", ", data.Take(10).Select(v => v.ToString("X8"))));
+	}
+	#endregion
 	#region Helpers
 	static CompiledKernel CompileAutoGroupedKernel(Accelerator accelerator, string methodName)
 	{
