@@ -24,8 +24,7 @@ internal class KernelCompilation : ISurveyArea
 	{
 		using var context = Context.Create(builder => builder
 					.Default()
-					.EnableAlgorithms()
-					.Inlining(InliningMode.Aggressive));
+					.EnableAlgorithms());
 		var device = context.Devices.FirstOrDefault(d => d.AcceleratorType == AcceleratorType.OpenCL);
 		if (device == null)
 		{

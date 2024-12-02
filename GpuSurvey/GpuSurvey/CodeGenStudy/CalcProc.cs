@@ -36,7 +36,11 @@ public static class CalcProc
 		var (cc1, cc2) = (UnfoldColor(color1), UnfoldColor(color2));
 		var res = new uint[4];
 		for (int i = 0; i < 4; i++)
-			res[i] = (uint)XMath.Round(cc1[i] * (1 - w) + cc2[i] * w);
+		{
+			var (_c1, _c2) = ((int)cc1[i], (int)cc2[i]);
+			res[i] = (uint)XMath.Round(_c1 * (1 - w) + _c2 * w);
+			//res[i] = (uint)XMath.Round(cc1[i] * (1 - w) + cc2[i] * w);
+		}
 		return FoldColor(res);
 	}
 	//static uint MixColors4(uint c00, uint c01, uint c10, uint c11, float w0, float w1)

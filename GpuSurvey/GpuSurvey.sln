@@ -5,6 +5,12 @@ VisualStudioVersion = 17.5.33516.290
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GpuSurvey", "GpuSurvey\GpuSurvey.csproj", "{87C78E3F-9E01-4F8B-A3A0-F78912128E06}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ILGPU", "ILGPU", "{3773CE6E-3344-460E-84E8-CEB37B680C8D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ILGPU", "..\..\ILGPU\Src\ILGPU\ILGPU.csproj", "{282395E0-F93B-493B-BA66-4441893E7D09}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ILGPU.Algorithms", "..\..\ILGPU\Src\ILGPU.Algorithms\ILGPU.Algorithms.csproj", "{710E5C75-2D44-4A99-8512-FA016AC0D2AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,9 +21,21 @@ Global
 		{87C78E3F-9E01-4F8B-A3A0-F78912128E06}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{87C78E3F-9E01-4F8B-A3A0-F78912128E06}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{87C78E3F-9E01-4F8B-A3A0-F78912128E06}.Release|Any CPU.Build.0 = Release|Any CPU
+		{282395E0-F93B-493B-BA66-4441893E7D09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{282395E0-F93B-493B-BA66-4441893E7D09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{282395E0-F93B-493B-BA66-4441893E7D09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{282395E0-F93B-493B-BA66-4441893E7D09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{710E5C75-2D44-4A99-8512-FA016AC0D2AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{710E5C75-2D44-4A99-8512-FA016AC0D2AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{710E5C75-2D44-4A99-8512-FA016AC0D2AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{710E5C75-2D44-4A99-8512-FA016AC0D2AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{282395E0-F93B-493B-BA66-4441893E7D09} = {3773CE6E-3344-460E-84E8-CEB37B680C8D}
+		{710E5C75-2D44-4A99-8512-FA016AC0D2AF} = {3773CE6E-3344-460E-84E8-CEB37B680C8D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A9B1AE48-44F0-41E1-BB19-40C0248D2333}
