@@ -58,14 +58,14 @@ public partial class SandboxControl : UserControl, IDisposable
 			//mainWnd.Activate();
 			//e.Pointer.Capture(this);
 			DragDrop.SetAllowDrop(dragWnd, true);
-			void onDragOverPreview(object? sender, DragEventArgs e)
+			static void onDragOverPreview(object? sender, DragEventArgs e)
 			{
 				//RaiseEvent(e);
 				//var pos = dragWnd.PointToScreen(e.GetPosition(dragWnd));
 				//UpdateDragWndPosition(pos);
 			}
 			dragWnd.AddHandler(DragDrop.DragOverEvent, onDragOverPreview);
-			await DragDrop.DoDragDrop(e, new DataObject(), DragDropEffects.Copy);
+			await DragDrop.DoDragDropAsync(e, new DataTransfer(), DragDropEffects.Copy);
 			dragWnd.RemoveHandler(DragDrop.DragOverEvent, onDragOverPreview);
 			CloseDragWnd();
 		}

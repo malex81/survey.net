@@ -3,9 +3,6 @@ using ILGPU;
 using ILGPU.Algorithms;
 using ILGPU.Runtime;
 using ImageProcessing.Helpers;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using SkiaSharp;
-using System;
 using System.Numerics;
 
 namespace ImageProcessing.RenderingMath;
