@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:cef="clr-namespace:Xilium.CefGlue.Avalonia;assembly=Xilium.CefGlue.Avalonia"
+             mc:Ignorable="d" d:DesignWidth="640" d:DesignHeight="480"
+             x:Class="ImageProcessing.SurveyCef.Views.WebViewer">
+	<Grid RowDefinitions="Auto, *, Auto">
+		<!-- Простая панель управления для теста -->
+		<StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="10" Margin="10">
+			<Button Content="Открыть Google" Click="OpenGoogle_Click"/>
+			<Button Content="Загрузить свой HTML" Click="LoadCustomHtml_Click"/>
+			<Button Content="DevTools" Click="OpenDevTools_Click"/>
+			<TextBox x:Name="AddressBox" Width="320" Watermark="https://..." KeyDown="AddressBox_KeyDown"/>
+		</StackPanel>
+		<!-- Браузер вынесен в отдельную строку Grid: при WindowlessRenderingEnabled=false CEF
+		     рисует в собственном дочернем HWND, который всегда перекрывает Avalonia-контент. -->
+		<ContentControl Grid.Row="1" x:Name="BrowserContainer" Background="#323"/>
+		<TextBlock Grid.Row="2" x:Name="StatusText" Margin="10 2 10 8" Opacity="0.7" TextTrimming="CharacterEllipsis"/>
+	</Grid>
+</UserControl>
