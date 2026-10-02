@@ -172,7 +172,7 @@ public static AppBuilder BuildAvaloniaApp()
 1. находит subprocess-экзешник и подставляет его в `BrowserSubprocessPath`;
 2. выбирает режим message loop под платформу — на Windows выставляет
    `settings.MultiThreadedMessageLoop = true`;
-3. регистрирует `CefRuntime.Shutdown` на выход из процесса;
+3. регистрирует `CefRuntime.Shutdown` на выход из процесса (см. §3.4);
 4. запоминает `IsOSREnabled = settings.WindowlessRenderingEnabled` — именно этот статический
    флаг потом читает `AvaloniaCefBrowser`, чтобы выбрать адаптер (см. §4).
 
@@ -237,6 +237,55 @@ static string ResolveLocalesDir(string basePath)
 
 Проверка именно по наличию `en-US.pak` (а не по `Directory.Exists`) — принципиальна:
 пустая папка `locales\` иначе была бы выбрана первой.
+
+### 3.4 Завершение работы: кто за что отвечает
+
+Специального кода для завершения процессов в приложении **нет**, и он не нужен.
+Штатное завершение обеспечивают два независимых механизма.
+
+**1. Закрытие браузера — через существующую цепочку `Dispose` приложения:**
+
+```
+desktop.Exit                (App.axaml.cs, ShutdownMode.OnMainWindowClose)
+  -> App.AppExit            -> kernel?.Dispose()
+    -> EngineKernel.Dispose -> services.Dispose()              (ServiceProvider)
+      -> ComponentRegistry.Dispose()                           (singleton, IDisposable)
+        -> WebViewer.Dispose()   -> _browser.Dispose()
+          -> BaseCefBrowser.Dispose -> _adapter.Dispose(true)  (CefGlue)
+```
+
+`ComponentRegistry` зарегистрирован как `AddSingleton<ISurveyComponent, ComponentRegistry>`
+и действительно создаётся контейнером: все `ISurveyComponent` разрешаются через
+`IEnumerable<ISurveyComponent>` в конструкторе `MainWindowModel`. Поэтому
+`ServiceProvider.Dispose()` его освобождает. Это штатный паттерн проекта, а не
+изобретение модуля `SurveyCef` — так же устроен `SurveyDragDrop\ComponentRegistry`.
+
+**2. Выключение самого CEF — внутри `CefRuntimeLoader`:**
+
+```csharp
+AppDomain.CurrentDomain.ProcessExit += delegate
+{
+    CefRuntime.Shutdown();
+};
+```
+
+Хук регистрируется один раз при `Initialize`. Вызывать `CefRuntime.Shutdown()` вручную
+из приложения **не нужно**: дублирующий shutdown вреден.
+
+Порядок получается корректным: сначала закрывается браузер (`desktop.Exit`), затем
+процесс завершается и срабатывает `ProcessExit` -> `CefShutdown`, который и останавливает
+дочерние процессы CEF.
+
+**Что не покрыто:**
+
+- `desktop.Exit` и `ProcessExit` срабатывают только при **штатном** выходе. При крахе или
+  принудительном завершении (`Stop-Process`, Task Manager) не срабатывает ни то, ни другое:
+  дочерние процессы могут остаться живыми, а кэш — залоченным.
+- Самозавершение дочерних процессов CEF после гибели родительского процесса (мониторинг
+  parent handle) в рамках этой работы **не проверялось** и как гарантия не рассматривается.
+
+Поэтому пункт §8 про ручную проверку процессов — это **гигиена отладки**, а не требование
+к рантайму приложения.
 
 ---
 
@@ -661,8 +710,11 @@ bin\x64\Debug\net8.0\ImageProcessing.dll    02.10.2026 20:47:42   <-- актуа
   нормально; в git их не коммитим (`[Bb]in/` в `.gitignore`).
 
 - **`Dispose`.** `WebViewer` реализует `IDisposable` и освобождает `_browser`;
-  `ComponentRegistry.Dispose` вызывает его. Не освобождать браузер до закрытия окна —
-  порядок завершения CEF чувствителен к этому.
+  `ComponentRegistry.Dispose` вызывает его по цепочке
+  `desktop.Exit -> kernel.Dispose -> ServiceProvider.Dispose` (см. §3.4).
+  Писать отдельный код завершения процессов не требуется: `CefRuntime.Shutdown`
+  зарегистрирован самим `CefRuntimeLoader`. Убивать процессы вручную нужно только
+  после аварийного завершения.
 
 ---
 
