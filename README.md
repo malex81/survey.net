@@ -6,3 +6,4 @@
 - **GrpcReview** - пример работы с gRPC
   - [Обзор на metanit](https://metanit.com/sharp/grpc/1.1.php)
 - **ImageProcessing** - эксперименты с изображениями на **Avalonia + ILGPU**
+  - [Встраивание браузера в Avalonia: CEF + CefGlue](ImageProcessing/docs/cef-avalonia.md)
