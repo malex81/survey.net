@@ -9,18 +9,59 @@ namespace ImageProcessing.Helpers;
 internal static class SysLog
 {
 	public static void TryLog(Exception ex, string fileName)
+		=> TryLog(ex.FormatException(), fileName);
+
+	public static void TryLog(string message, string fileName)
 	{
-		var kernel = App.CurrentKernel;
-		if (kernel == null) return;
+		string? dir = ResolveLogDir();
+		if (dir == null)
+		{
+			TryLogFallback(fileName, message);
+			return;
+		}
+
 		try
 		{
-			var logConfigs = kernel.AppConfig.GetSection("Logging");
-			var serilogConfig = logConfigs.GetSection("Serilog");
-			var pathFormat = serilogConfig.GetValue<string>("PathFormat");
-			if (pathFormat == null) return;
-			var dir = Path.GetDirectoryName(pathFormat) ?? "./";
-			var filePath = Path.Combine(dir, fileName);
-			File.WriteAllText(filePath, ex.FormatException());
+			Directory.CreateDirectory(dir);
+			File.WriteAllText(Path.Combine(dir, fileName), message);
+		}
+		catch
+		{
+			TryLogFallback(fileName, message);
+		}
+	}
+
+	static string? ResolveLogDir()
+	{
+		try
+		{
+			string? binPath = Path.GetDirectoryName(typeof(SysLog).Assembly.Location);
+			if (string.IsNullOrEmpty(binPath)) return null;
+
+			IConfigurationRoot cfg = new ConfigurationBuilder()
+				.SetBasePath(Path.Combine(binPath, "..", "config"))
+				.AddJsonFile("appsettings.json", optional: false)
+				.AddCommandLine(Environment.GetCommandLineArgs())
+				.Build();
+
+			string? pathFormat = cfg["Logging:Serilog:PathFormat"];
+			return pathFormat == null ? null : Path.GetDirectoryName(pathFormat);
+		}
+		catch
+		{
+			return null;
+		}
+	}
+
+	static void TryLogFallback(string fileName, string message)
+	{
+		try
+		{
+			string dir = Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+				"ImageProcessing");
+			Directory.CreateDirectory(dir);
+			File.WriteAllText(Path.Combine(dir, fileName), message);
 		}
 		catch { }
 	}

@@ -1,8 +1,9 @@
-# Встраивание браузера в Avalonia: CEF + CefGlue
+﻿# Встраивание браузера в Avalonia: CEF + CefGlue
 
 > Проект: `ImageProcessing` · Модуль: `SurveyCef`
 > Пакет: `CefGlue.Avalonia` **120.6099.215** (Chromium 120.0.6099.215) · Avalonia **11.3.\*** · `net8.0` · `x64`
 > Статус: **рабочая конфигурация** — оконный режим рендеринга (`WindowlessRenderingEnabled = false`).
+> Платформы: Windows ✅ · Astra Linux ✅ (Linux самовосстанавливает бит исполнения субпроцесса CEF, см. §8).
 
 ---
 
@@ -29,9 +30,10 @@
 5. [Ограничение оконного режима: airspace](#5-ограничение-оконного-режима-airspace)
 6. [Разбор инцидента: пустой экран в OSR](#6-разбор-инцидента-пустой-экран-в-osr)
 7. [Сборка и запуск](#7-сборка-и-запуск)
-8. [Чек-лист диагностики](#8-чек-лист-диагностики)
-9. [Если понадобится OSR](#9-если-понадобится-osr)
-10. [Источники](#10-источники)
+8. [Linux (Astra): решённый инцидент и потенциальные проблемы](#8-linux-astra-решённый-инцидент-и-потенциальные-проблемы)
+9. [Чек-лист диагностики](#9-чек-лист-диагностики)
+10. [Если понадобится OSR](#10-если-понадобится-osr)
+11. [Источники](#11-источники)
 
 ---
 
@@ -284,7 +286,7 @@ AppDomain.CurrentDomain.ProcessExit += delegate
 - Самозавершение дочерних процессов CEF после гибели родительского процесса (мониторинг
   parent handle) в рамках этой работы **не проверялось** и как гарантия не рассматривается.
 
-Поэтому пункт §8 про ручную проверку процессов — это **гигиена отладки**, а не требование
+Поэтому пункт §9 про ручную проверку процессов — это **гигиена отладки**, а не требование
 к рантайму приложения.
 
 ---
@@ -658,9 +660,125 @@ bin\x64\Debug\net8.0\ImageProcessing.dll    02.10.2026 20:47:42   <-- актуа
 
 ---
 
-## 8. Чек-лист диагностики
+## 8. Linux (Astra): решённый инцидент и потенциальные проблемы
 
-### 8.1 «Браузер не виден» — порядок проверки
+На Windows всё работает. На Linux был один реальный инцидент — потеря бита исполнения
+субпроцесса CEF (он уже решён в коде и описан ниже кратко). Остальное — потенциальные
+проблемы, которых пока не было, но они вероятны на Astra/в VM.
+
+### 8.1 Решённый инцидент: `failed to execvp` (нет бита `+x`)
+
+Симптом: приложение стартует, но при инициализации браузера падает с
+`LaunchProcess: failed to execvp: .../CefGlueBrowserProcess/Xilium.CefGlue.BrowserProcess`,
+`exit_code=32512` (= `127 << 8`) и финальным `GPU process isn't usable. Goodbye`.
+
+Причина: NTFS (Windows) не хранит бит исполнения, публикация идёт из Windows
+(`publish-linux.bat` → `dotnet publish -r linux-x64`), и при переносе на Astra `+x` у
+субпроцесса-хоста CEF теряется, поэтому `execvp` не может его запустить.
+
+Решение — уже в коде: `Program.cs` → `EnsureCefSubprocessExecutable()` (вызывается первым
+в `InitializeCef()`, до `CefRuntimeLoader.Initialize`) сам выставляет `+x` субпроцессу.
+Ручная альтернатива на целевой машине:
+
+```bash
+chmod +x /home/auser/sandbox/ImageProcessing_linux/bin/CefGlueBrowserProcess/Xilium.CefGlue.BrowserProcess
+```
+
+**Важное ограничение (подтверждено на практике).** Программная установка `+x` срабатывает
+**только когда приложение запущено от владельца файла** (или от `root`): `chmod` требует
+владения, а не права записи. Если сборка разложена через `sudo`/root-сессию и файлы принадлежат
+`root`, приложение (под `auser`) получает `UnauthorizedAccessException` (EPERM) и бит не
+выставляет — в `cef-chmod.log` это видно как `ERROR UnauthorizedAccessException`. Лечится
+только на уровне деплоя:
+
+```bash
+sudo chown -R auser:auser /home/auser/sandbox/ImageProcessing_linux
+chmod +x /home/auser/sandbox/ImageProcessing_linux/bin/ImageProcessing
+chmod +x /home/auser/sandbox/ImageProcessing_linux/bin/CefGlueBrowserProcess/Xilium.CefGlue.BrowserProcess
+```
+
+Либо изначально переносить сборку от имени `auser` (без `sudo`).
+
+### 8.2 Как передать флаги командной строки в CEF
+
+`CefRuntimeLoader.Initialize` принимает параметр `flags` — массив
+`KeyValuePair<string, string>` (ключ — имя switch, значение — его значение):
+
+```csharp
+CefRuntimeLoader.Initialize(
+    new CefSettings { /* ... */ },
+    flags: new[]
+    {
+        KeyValuePair.Create("disable-gpu", ""),        // --disable-gpu
+        KeyValuePair.Create("use-gl", "swiftshader"),  // --use-gl=swiftshader
+    });
+```
+
+Внутри CefGlue это превращается в `commandLine.AppendSwitch(key, value)` для browser-процесса.
+Для switch без значения передают пустую строку. Нужен `using System.Collections.Generic;`.
+
+### 8.3 Потенциальная проблема: запуск под `root` (sandbox)
+
+**CefGlue уже сам отключает sandbox на Linux**: в `CefRuntimeLoader` для платформы Linux
+жёстко выставляется `settings.NoSandbox = true` и добавляется `--no-zygote`. Поэтому под
+`root` CEF работает без дополнительных действий.
+
+Если в особом окружении (контейнер, ограниченные user namespaces, SELinux) всё же появится
+ошибка sandbox — добавить через `flags` (§8.2):
+
+```csharp
+KeyValuePair.Create("disable-setuid-sandbox", ""),
+```
+
+### 8.4 Потенциальная проблема: GPU в VM / без аппаратного ускорения
+
+Симптом: GPU-процесс CEF падает (в логе `gpu_process_host.cc` → `GPU process isn't usable`),
+страница может остаться пустой или рисоваться с артефактами. Это **не** ошибка из §8.1 —
+там GPU падал из-за `execvp`; здесь реальное отсутствие GPU/драйвера в виртуалке.
+
+Лечится программным рендерингом через `flags` (§8.2):
+
+```csharp
+flags: new[]
+{
+    KeyValuePair.Create("disable-gpu", ""),
+    KeyValuePair.Create("disable-gpu-compositing", ""),
+    KeyValuePair.Create("use-gl", "swiftshader"),
+}
+```
+
+`--disable-gpu` отключает GPU; `--use-gl=swiftshader` включает software-растеризацию
+(SwiftShader) — обычно достаточно одного из двух.
+
+### 8.5 Системные библиотеки и диагностика
+
+Минимальной Astra может не хватать зависимостей `libcef.so` (`libgtk-3`, `libnss3`, `libnspr4`,
+`libx11`, `libxcomposite`, `libasound2` и пр.). Для старта это не блокер (`libcef.so` уже
+грузится), но может проявиться на GUI-фичах. Проверка недостающих зависимостей:
+
+```bash
+ldd /home/auser/sandbox/ImageProcessing_linux/bin/CefGlueBrowserProcess/libcef.so | grep -i "not found"
+```
+
+Общий набор команд для диагностики Linux-сборки:
+
+```bash
+file    /home/auser/sandbox/ImageProcessing_linux/bin/CefGlueBrowserProcess/Xilium.CefGlue.BrowserProcess
+uname -m
+cat /etc/os-release
+cat /etc/astra_version 2>/dev/null
+ldd --version | head -1
+```
+
+Диагностика chmod пишется в `cef-chmod.log` — туда же, куда остальные логи
+(`<рабочая папка>/../logs/`), при недоступности этой папки — fallback в
+`~/.local/share/ImageProcessing/`.
+
+---
+
+## 9. Чек-лист диагностики
+
+### 9.1 «Браузер не виден» — порядок проверки
 
 1. **Собрано ли под x64?** Сравнить `LastWriteTime` DLL в `bin\x64\Debug\net8.0\`
    с моментом правки (§7.1).
@@ -678,7 +796,7 @@ bin\x64\Debug\net8.0\ImageProcessing.dll    02.10.2026 20:47:42   <-- актуа
    для браузера и всех предков. Нулевой размер у любого предка = пустой экран.
 7. **Для OSR** — семплировать пиксели `WriteableBitmap` (§6.2).
 
-### 8.2 Прочие известные шероховатости
+### 9.2 Прочие известные шероховатости
 
 - **`data:` URL заблокирован.** Chromium запрещает top-level-навигацию на `data:`.
   Свой HTML внедряется в уже загруженный `about:blank` через JS:
@@ -718,7 +836,7 @@ bin\x64\Debug\net8.0\ImageProcessing.dll    02.10.2026 20:47:42   <-- актуа
 
 ---
 
-## 9. Если понадобится OSR
+## 10. Если понадобится OSR
 
 OSR оправдан только если действительно нужны возможности, запрещённые airspace (§5):
 оверлеи поверх страницы, прозрачность, трансформации, браузер внутри `ScrollViewer`,
@@ -748,7 +866,7 @@ OSR оправдан только если действительно нужны
 
 ---
 
-## 10. Источники
+## 11. Источники
 
 | Что | Где |
 |---|---|

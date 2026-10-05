@@ -86,7 +86,7 @@ internal partial class ImageViewerModel : ObservableObject, IMouseDragModel
 	ImageViewerModel(string relPath)
 	{
 		var samplesPath = PathHelper.FindDirectory(relPath);
-		Images = samplesPath == null ? [] : LoadImages(samplesPath).ToArray();
+		Images = samplesPath == null ? [] : [.. LoadImages(samplesPath)];
 		SelectedImage = Images.FirstOrDefault();
 	}
 

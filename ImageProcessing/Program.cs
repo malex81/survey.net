@@ -4,6 +4,7 @@ using ImageProcessing.Helpers;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Xilium.CefGlue;
 using Xilium.CefGlue.Common;
@@ -39,6 +40,12 @@ class Program
 
 	static void InitializeCef()
 	{
+		// The CEF subprocess host (CefGlueBrowserProcess\Xilium.CefGlue.BrowserProcess) must be
+		// executable on Linux. Publishing from Windows (NTFS has no +x bit) and then copying to the
+		// target often drops the execute permission, which makes libcef fail with
+		// "LaunchProcess: failed to execvp" and the child process exit with code 127.
+		EnsureCefSubprocessExecutable();
+
 		// CEF must be initialized through CefRuntimeLoader, never by calling
 		// CefRuntime.Load/ExecuteProcess/Initialize directly. It resolves the subprocess
 		// executable (CefGlueBrowserProcess\Xilium.CefGlue.BrowserProcess.exe), selects the
@@ -78,6 +85,49 @@ class Program
 		];
 
 		return candidates.FirstOrDefault(d => File.Exists(Path.Combine(d, "en-US.pak"))) ?? candidates[0];
+	}
+
+	static void EnsureCefSubprocessExecutable()
+	{
+		if (!OperatingSystem.IsLinux()) return;
+
+		var log = new StringBuilder();
+		log.AppendLine($"CEF subprocess chmod diagnostic @ {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+
+		string[] candidates =
+		[
+			Path.Combine(AppContext.BaseDirectory, "CefGlueBrowserProcess", "Xilium.CefGlue.BrowserProcess"),
+			Path.Combine(AppContext.BaseDirectory, "Xilium.CefGlue.BrowserProcess")
+		];
+
+		foreach (string path in candidates)
+		{
+			try
+			{
+				log.AppendLine($"check: {path}");
+				if (!File.Exists(path))
+				{
+					log.AppendLine("  not found");
+					continue;
+				}
+
+				UnixFileMode before = File.GetUnixFileMode(path);
+				log.AppendLine($"  before: {before}");
+
+				File.SetUnixFileMode(path, before
+					| UnixFileMode.UserExecute
+					| UnixFileMode.GroupExecute
+					| UnixFileMode.OtherExecute);
+
+				log.AppendLine($"  after: {File.GetUnixFileMode(path)}");
+			}
+			catch (Exception ex)
+			{
+				log.AppendLine($"  ERROR {ex.GetType().Name}: {ex.Message}");
+			}
+		}
+
+		SysLog.TryLog(log.ToString(), "cef-chmod.log");
 	}
 }
 #endif
