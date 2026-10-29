@@ -30,6 +30,11 @@ public partial class MainWindowModel : ObservableObject
         logger.LogTrace("Run app...");
 
         Items = surveys.Select(s => new SurveyItemModel(s)).ToArray();
-        SelectedItem = Items.FirstOrDefault();
+    }
+
+    public void SelectFirst()
+    {
+        if (SelectedItem == null)
+            SelectedItem = Items.FirstOrDefault();
     }
 }
