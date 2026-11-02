@@ -1,0 +1,31 @@
+{
+	// Use IntelliSense to learn about possible attributes.
+	// Hover to view descriptions of existing attributes.
+	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+	"version": "0.2.0",
+	"configurations": [
+		{
+			// Debug|x64 matches the solution configuration (ImageProcessing.sln) and the
+			// declared <Platforms>x64</Platforms>. The app loads ../config/appsettings.json
+			// (optional: false), which target CopyConfig puts next to the output folder.
+			// AnyCPU (bin/Debug) is not used: CefGlue refs are AMD64-only (MSB3270).
+			"name": "ImageProcessing (Debug x64)",
+			"type": "coreclr",
+			"request": "launch",
+			"preLaunchTask": "build",
+			"program": "${workspaceFolder}/bin/x64/Debug/net8.0/ImageProcessing.dll",
+			"args": [],
+			// cwd = output folder keeps CEF runtime caches (DawnCache/GPUCache) out of the
+			// repository root; relative paths like "./##/image samples" are still resolved
+			// by PathHelper, which walks up the directory tree.
+			"cwd": "${workspaceFolder}/bin/x64/Debug/net8.0",
+			"console": "internalConsole",
+			"stopAtEntry": false
+		},
+		{
+			"name": ".NET Core Attach",
+			"type": "coreclr",
+			"request": "attach"
+		}
+	]
+}

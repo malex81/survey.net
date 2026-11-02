@@ -50,7 +50,7 @@
 
 	<Target Name="CopyConfig" AfterTargets="AfterBuild">
 		<ItemGroup>
-			<ConfigFiles Include="$(SolutionDir)\config\**\*.*" />
+			<ConfigFiles Include="$(MSBuildProjectDirectory)\config\**\*.*" />
 		</ItemGroup>
 		<Copy SourceFiles="@(ConfigFiles)" DestinationFolder="$(OutputPath)..\config\%(RecursiveDir)" />
 	</Target>
